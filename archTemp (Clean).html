@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <span>Download Archive</span>
+    </div>
+    <select class="tab-dropdown" id="tabDropdown">
+      <!-- <option value="home">Home</option> -->
+      <!-- <option value="resources">Resources</option> -->
+      <!-- <option value="home">Web Update</option> -->
+      <!-- <option value="ver-sta">Version Status</option> -->
+      <!-- <option value="web-sta">Website Status</option> -->
+      <!-- <option value="info-c">Info of this website</option> -->
+      <option value="info-b">About ArchOS</option>
+      <!-- <option value="about">About</option>
+      <option value="update">Update</option> -->
+    </select>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <div class="main-container">
+    <!-- SIDEBAR (desktop only) -->
+    <nav class="sidebar" id="sidebar">
+      <!-- <a class="nav-link active" data-tab="home">Home</a> -->
+      <!-- <a class="nav-link" data-tab="resources">Resources</a> -->
+      <!-- <a class="nav-link" data-tab="home">File Archive</a> -->
+      <a class="nav-link active" data-tab="resources">File Archive</a>
+      <!-- <div class="nav-group" id="websiteGroup">
+        <button type="button" class="nav-group-toggle" id="websiteToggle" aria-expanded="false">Website</button>
+        <div class="nav-submenu">
+          <a class="nav-link nav-sublink" data-tab="web-sta">Website Status</a>
+        </div>
+      </div>
+      <a class="nav-link" data-tab="info-c">Info of this website</a>
+      <a class="nav-link" data-tab="info-b">About ArchOS</a> -->
+      <a class="nav-link" data-tab="conf">configuration</a>
+      <!-- <a class="nav-link" data-tab="about">About</a>
+      <a class="nav-link" data-tab="update">Update</a> -->
+    </nav>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+      <!-- HOME -->
+      <section id="home" class="tab-content">
+        <!-- <a href="/index.html" class="back-btn">Back</a> -->
+        <!-- <b><p class="text">The template has not been made public yet because the code still has some bugs.</p></b>
+        <p class="text">Archivable Website is a template website designed for users who are new to coding.</p>
+        <p class="text">This template allows users to place files they wish to share and create a public archive through a one-stop website, just like this template.</p>
+        <p class="text">The v4 edition focuses on stability, proper structure, and ease of use for template users. This edition uses a modern and clean design that works across all devices, including phones and tablets. We have also added a search system to help users locate archives faster and save time. A dark mode system has been added as well to provide a more comfortable reading experience.</p>
+        <p class="text">The v5 edition introduces a new look. We are changing the modern design to a neon-light style with a more futuristic feel and improved user experience. We are also planning major UI changes for v5, including rearranged layouts, a redesigned navigation bar, improved responsiveness, and more user-customizable features.</p> -->
+        <!-- <p class="text">Note that the link-direct website is made based on ArchOS. The expierences depends on the update of ArchOS and code optimizing.</p> -->
+        <div class="content-item-3 update39">
+          <!-- <div class="update-label-container">
+            <span class="update-label orange">NEW RELEASE</span>
+            <span class="update-label blue-3">Stable</span>
+          </div> -->
+          <div class="text-2-header">v 1.0.4 Release Notes</div>
+          <hr>
+          <p class="text-2-para">- Added few more links</p>
+          <p class="text-2-para">- Added new theme: Neon</p>
+          <p class="text-2-para">- Added new feature: Save Locally</p>
+        </div>
+
+        <br>
+        
+        <div class="content-item-3 update39">
+          <!-- <div class="update-label-container">
+            <span class="update-label orange">NEW RELEASE</span>
+            <span class="update-label blue-3">Stable</span>
+          </div> -->
+          <div class="text-2-header">v 1.0.1 Release Notes</div>
+          <hr>
+          <p class="text-2-para">- Improved user expierences</p>
+        </div>
+
+        <br>
+
+        <div class="content-item-3 update39">
+          <!-- <div class="update-label-container">
+            <span class="update-label orange">NEW RELEASE</span>
+            <span class="update-label blue-3">Stable</span>
+          </div> -->
+          <div class="text-2-header">v 1.0.0 Release Notes</div>
+          <hr>
+          <p class="text-2-para">- Removed custom cursor for PC</p>
+          <p class="text-2-para">- Removed the '\' symbol</p>
+        </div>
+      </section>
+
+      <!-- RESOURCES -->
+      <section id="resources" class="tab-content hidden">
+        <input type="text" id="searchBox" placeholder="Search by Number">
+
+        <br><br>
+
+        <div class="content-item">
+          <div class="box"></div>
+          <div class="text"><a href="https://link-unlock.com/1lbhqova" target="_blank" class="text-a">001 - Browser Krunker.io Hack</a></div>
+        </div>
+        <div class="content-item">
+          <div class="box"></div>
+            <div class="text"><a href="https://chromewebstore.google.com/detail/adblock-%E2%80%94-block-ads-acros/gighmmpiobklfepjocnamgkkbiglidom" target="_blank" class="text-a">002 - AdBlocker (Chrome Extension)</a></div>
+        </div>
+        <div class="content-item hidden-result" style="display:none;">
+          <div class="box"></div>
+          <div class="text"><a href="https://mail.google.com/mail/u/0/#inbox?compose=GTvVlcSHvnqdVrknnwPQfxzsTclDKKCkssGjvxQHWQqfMMbVppXGsKLZBcZpbJFsbNQRZSDcJZqKp" target="_blank" class="text-a">A01 - Developer Email (Direct to Compose page)</a></div>
+        </div>
+        <div class="content-item">
+          <div class="box"></div>
+          <div class="text"><a href="https://kirka.io/" target="_blank" class="text-a">003 - Kirka.io IO Game</a></div>
+        </div>
+        <div class="content-item">
+          <div class="box"></div>
+          <div class="text"><a href="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en" target="_blank" class="text-a">100 - Tampermonkey Download Link (Chrome Web Store)</a></div>
+        </div>
+        <div class="content-item">
+          <div class="box"></div>
+          <div class="text"><a href="https://chatgpt.com/" target="_blank" class="text-a">004 - ChatGPT</a></div>
+        </div>
+        <div class="content-item">
+          <div class="box"></div>
+          <div class="text"><a href="https://gamefirst-vi.updatestar.com/en" target="_blank" class="text-a">005 - Gamefirst VI (Zero Ping PC Improvement)</a></div>
+        </div>
+        <div class="content-item">
+          <div class="box"></div>
+          <div class="text"><a href="https://www.opautoclicker.com/" target="_blank" class="text-a">006 - OP Auto Clicker Download Link</a></div>
+        </div>
+        <div class="content-item">
+          <div class="box"></div>
+          <div class="text"><a href="https://one.one.one.one/" target="_blank" class="text-a">007 - Best VPN (1.1.1.1)</a></div>
+        </div>
+        <div class="content-item">
+          <div class="box"></div>
+          <div class="text"><a href="https://gamebooster.itopvpn.com/index.php" target="_blank" class="text-a">008 - Smartgame Booster</a></div>
+        </div>
+        <div class="content-item">
+          <div class="box"></div>
+          <div class="text"><a href="https://greasyfork.org/en/scripts/372673-%E8%AE%A1%E6%97%B6%E5%99%A8%E6%8E%8C%E6%8E%A7%E8%80%85-%E8%A7%86%E9%A2%91%E5%B9%BF%E5%91%8A%E8%B7%B3%E8%BF%87-%E8%A7%86%E9%A2%91%E5%B9%BF%E5%91%8A%E5%8A%A0%E9%80%9F%E5%99%A8" target="_blank" class="text-a">009 - TimerHooker, A script that can change hook and change the script (You may need to install Tampermonkey before installing this script)</a></div>
+        </div>
+        <div class="content-item">
+          <div class="box"></div>
+          <div class="text"><a href="https://greasyfork.org/en/scripts/541075-voxiom-io-aimbot-esp-x-ray-4-6-noads" target="_blank" class="text-a">010 - Voxiom.io Hack</a></div>
+        </div>
+        <div class="content-item">
+          <div class="box"></div>
+          <div class="text"><a href="https://voxiom.io/" target="_blank" class="text-a">011 - Voxiom.io</a></div>
+        </div>
+      </section>
+
+      <!-- Web Update -->
+      <section id="web-update" class="tab-content hidden">
+        <div class="content-item-3 update39">
+          <!-- <div class="update-label-container">
+            <span class="update-label orange">NEW RELEASE</span>
+            <span class="update-label blue-3">Stable</span>
+          </div> -->
+          <div class="text-2-header">v 4.3</div>
+          <hr>
+          <p class="text-2-para">- Removed custom cursor</p>
+          <p class="text-2-para">- Removed the '\' symbol</p>
+          <p class="text-2-para">- Fixed Update card background color issue</p>
+          <p class="text-2-para">- Changed the update label to more specific</p>
+          <p class="text-2-para">- Adjust the font size of update title</p>
+        </div>
+      </section>
+
+      <!-- Version Status -->
+      <section id="ver-sta" class="tab-content hidden">
+        <div class="content-item-3 update39">
+          <div class="text-2-header">Server Status</div>
+          <hr>
+          <div class="server-status-list">
+            <div class="server-status-row">
+              <span class="status-dot green" aria-hidden="true"></span>
+              <span class="server-name">v1.5</span>
+              <span class="server-state">Working</span>
+            </div>
+            <div class="server-status-row">
+              <span class="status-dot green" aria-hidden="true"></span>
+              <span class="server-name">v1.6</span>
+              <span class="server-state">Working</span>
+            </div>
+            <div class="server-status-row">
+              <span class="status-dot green" aria-hidden="true"></span>
+              <span class="server-name">v1.7</span>
+              <span class="server-state">Working</span>
+            </div>
+            <div class="server-status-row">
+              <span class="status-dot green" aria-hidden="true"></span>
+              <span class="server-name">v1.8</span>
+              <span class="server-state">Working</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Website Status -->
+      <section id="web-sta" class="tab-content hidden">
+        <div class="content-item-3 update39">
+          <div class="text-2-header">Server Status</div>
+          <hr>
+          <div class="server-status-list">
+            <div class="server-status-row">
+              <span class="status-dot green" aria-hidden="true"></span>
+              <span class="server-name">v1.5</span>
+              <span class="server-state">Working</span>
+            </div>
+            <div class="server-status-row">
+              <span class="status-dot green" aria-hidden="true"></span>
+              <span class="server-name">v1.6</span>
+              <span class="server-state">Working</span>
+            </div>
+            <div class="server-status-row">
+              <span class="status-dot green" aria-hidden="true"></span>
+              <span class="server-name">v1.7</span>
+              <span class="server-state">Working</span>
+            </div>
+            <div class="server-status-row">
+              <span class="status-dot green" aria-hidden="true"></span>
+              <span class="server-name">v2</span>
+              <span class="server-state">Working</span>
+            </div>
+            <div class="server-status-row">
+              <span class="status-dot green" aria-hidden="true"></span>
+              <span class="server-name">v2.0.1</span>
+              <span class="server-state">Working</span>
+            </div>
+            <div class="server-status-row">
+              <span class="status-dot green" aria-hidden="true"></span>
+              <span class="server-name">v3</span>
+              <span class="server-state">Working</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ABOUT -->
+      <section id="about" class="tab-content hidden">
+        <div class="content-item-2">
+          <div class="text-2">Archivable Website v4</div>
+          <hr>
+          <p class="text">This is a public beta for Archivable Website v4.3.</p>
+          <p class="text">This is an early developer beta preview released by the developer. The current version is displayed in the top-left corner. This website may not be stable because the developer is still testing it.</p>
+          <p class="text">The proper release version is expected to be v4.6 or earlier, as development for Archivable Website v5 is already in progress.</p>
+          <p class="text">Version v4 is intended to be a stable release with a clean design and a user-friendly experience for those using this template.</p>
+          <p class="text">We are adding new features and fixing bugs. The most stable version will arrive soon.</p>
+          <hr>
+        </div>
+      </section>
+
+      <!-- Info of this website -->
+       <section id="info-c" class="tab-content hidden">
+        <div class="content-item-2">
+          <div class="text-2">Archivable Website v1.2 (Customized)</div>
+          <hr>
+          <p class="text">This website was redesigned. The original template was made by Archivable Website v1.27. Versions older than v3.9.84a / v3.9.84b are outdated and no longer supported, but they are still usable.</p>
+          <hr>
+        </div>
+      </section>
+
+      <!-- About ArchOS -->
+       <section id="info-b" class="tab-content hidden">
+        <div class="content-item-2">
+          <div class="text-2">ArchOS</div>
+          <hr>
+          <p class="text">ArchOS is built for a website engine and provides a unique website template that is beginner-friendly. Developers can add the ArchOS Core JS into their HTML files to handle loading, prevent code errors, and improve the overall experience.</p>
+          <hr>
+        </div>
+      </section>
+
+      <!-- Configuration -->
+      <section id="conf" class="tab-content hidden">
+        <div class="content-item-39">
+          <div class="text-2">
+            version: 3.82
+            <br>
+            terminal version: 0.48
+            <br>
+            mobile: support
+          </div>
+        </div>
+      </section>
+
+
+      <!-- UPDATE -->
+      <section id="update" class="tab-content hidden">
+        <!-- UPDATE ITEMS -->
+         <div class="content-item-3 update39">
+          <div class="update-label-container">
+            <span class="update-label orange">NEW RELEASE</span>
+            <span class="update-label blue-3">Stable</span>
+          </div>
+          <div class="text-2-header">v 4.3</div>
+          <hr>
+          <p class="text-2-para">- Removed custom cursor</p>
+          <p class="text-2-para">- Removed the '\' symbol</p>
+          <p class="text-2-para">- Fixed Update card background color issue</p>
+          <p class="text-2-para">- Changed the update label to more specific</p>
+          <p class="text-2-para">- Adjust the font size of update title</p>
+        </div>
+
+        <br>
+
+        <div class="content-item-3 update39">
+          <div class="update-label-container">
+            <span class="update-label blue-2">Private Beta [2]</span>
+          </div>
+          <div class="text-2-header">v 4.2.2</div>
+          <hr>
+          <p class="text-2-para">- We have added our custom cursor (only for PC users)</p>
+          <p class="text-2-para">- Optimized the code layout, do forgive us if you have any questions</p>
+        </div>
+
+        <br>
+
+        <div class="content-item-3 update39">
+          <div class="update-label-container">
+            <span class="update-label blue-2">Private Beta [1]</span>
+          </div>
+          <div class="text-2-header">v 4.2.1</div>
+          <hr>
+          <p class="text-2-para">- Updated some grammar error</p>
+          <p class="text-2-para">- Optimized responsive design</p>
+          <p class="text-2-para">- Fixed the update label overlap issue</p>
+          <p class="text-2-para">- Font size adapts to device</p>
+          <p class="text-2-para">- Comfortable to read</p>
+          <p class="text-2-para">- Responsive design now Phase 2</p>
+          <p class="text-2-para">- Removed PREVIEW(BETA) label → BETA-1</p>
+        </div>
+
+        <br>
+
+        <div class="content-item-3 update39">
+          <div class="update-label-container">
+            <span class="update-label green">NEW</span>
+          </div>
+          <div class="text-2-header">v4.2</div>
+          <hr>
+          <p class="text-2-para">- Fixed mobile label overlap bug</p>
+          <p class="text-2-para">- Fixed known computer bug in v4.1</p>
+          <hr>
+          <div class="text-2-header">Additional Info</div>
+          <p class="text-2-para">- Work started on dark/day mode toggle.</p>
+          <p class="text-2-para">- Custom dropdown planned (may be Lefi).</p>
+          <p class="text-2-para">- Improved device-specific widths for better UX.</p>
+          <p class="text-2-para">- Redesign confirmed, expected v4.6+.</p>
+          <p class="text-2-para">- Final template code will be public with LefiWEB presets.</p>
+        </div>
+
+        <br>
+
+        <div class="content-item-3 update39">
+          <div class="update-label-container">
+            <span class="update-label red">Archive</span>
+          </div>
+          <div class="text-2-header">v4.1</div>
+          <hr>
+          <p class="text-2-para">- Responsive design now in testing (Phase 1)</p>
+        </div>
+
+        <br>
+
+
+        <div class="content-item-3 update39">
+          <div class="update-label-container">
+            <span class="update-label red">Archive</span>
+          </div>
+          <div class="text-2-header">Archivable Website v4</div>
+          <hr>
+          <p class="text-2-para">- Added this update tab</p>
+        </div>
+
+        <br>
+
+        <div class="content-item-3 update39">
+          <div class="update-label-container">
+            <span class="update-label red">Archive</span>
+          </div>
+          <div class="text-2-header">v3.9</div>
+          <hr>
+          <p class="text-2-para">- Added more tabs</p>
+          <p class="text-2-para">- Optimized website performance</p>
+        </div>
+
+        <br>
+
+
+        <div class="content-item-2">
+          <p class="text-info alert important">There is no update record before v3.9</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- SCRIPT: tab switching -->
+  <script src="script.js"></script>
+  <script src="chop_v1.js"></script>
+
+</body>
+</html>
