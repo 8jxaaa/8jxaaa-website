@@ -1118,6 +1118,28 @@
       });
     }
 
+    function restoreArticleListItemsWhenUnfiltered() {
+      var articleSearchInput = document.getElementById("articleSearchBox");
+      if (!articleSearchInput) {
+        return;
+      }
+      var rawQuery = String(articleSearchInput.value || "").trim();
+      if (rawQuery) {
+        return;
+      }
+
+      var listItems = Array.prototype.slice.call(listView.querySelectorAll(".content-item"));
+      listItems.forEach(function (item) {
+        var shouldStayHidden =
+          item.dataset.defaultHidden === "true" ||
+          item.classList.contains("hidden-result") ||
+          item.hasAttribute("hidden");
+        if (!shouldStayHidden) {
+          item.style.display = "";
+        }
+      });
+    }
+
     function hideAllDetailCards() {
       detailCards.forEach(function (card) {
         card.classList.add("hidden");
@@ -1283,7 +1305,7 @@
     }
 
     function showList(forceImmediate) {
-      if (forceImmediate || articleViewTransitionMs === 0 || detailView.classList.contains("hidden")) {
+      if (forceImmediate || articleViewTransitionMs === 0 || detailView.classList.contains("hidden") || isMobileLayoutActive()) {
         hideAllDetailCards();
         clearViewState(listView);
         clearViewState(detailView);
@@ -1293,13 +1315,17 @@
         detailView.style.display = "none";
         clearBackButtonFadeClasses();
         clearArticleHostMinHeight();
+        restoreArticleListItemsWhenUnfiltered();
         recoverViewVisibility(listView, 0);
         return;
       }
 
       setDetailCardsOpacity("0");
       transitionViews(detailView, listView, {
-        onComplete: hideAllDetailCards
+        onComplete: function () {
+          hideAllDetailCards();
+          restoreArticleListItemsWhenUnfiltered();
+        }
       });
       recoverViewVisibility(listView, articleViewTransitionMs);
     }
