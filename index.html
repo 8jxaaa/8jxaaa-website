@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Download</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Article Archive">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0b0f14">
+  <title>Article Archive</title>
   <link rel="stylesheet" href="style.css">
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <style>
@@ -32,15 +37,20 @@
       top: 0;
       left: 0;
       width: 100%;
-      height: 100%;
+      min-height: 100vh;
+      height: 100dvh;
       background: rgba(0, 0, 0, 0.5);
       z-index: 9999;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
       opacity: 0;
       pointer-events: none;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: calc(env(safe-area-inset-top) + 72px) 16px calc(env(safe-area-inset-bottom) + 20px);
       transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1);
     }
 
@@ -56,6 +66,12 @@
       text-align: center;
       width: 100%;
       max-width: 320px;
+      margin: 0 auto;
+      max-height: calc(100vh - 110px);
+      max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 110px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
       padding: 20px;
     }
 
@@ -125,6 +141,9 @@
       .tab-dropdown {
         display: none !important;
       }
+      .mobile-menu-list {
+        overflow-y: auto;
+      }
     }
 
     .app-container {
@@ -185,9 +204,9 @@
     <!-- HEADER -->
     <header class="header">
       <div class="header-left" id="downloadArchiveTitle" role="button" aria-label="Download Archive">
-        <span>Download Archive</span>
+        <span>Article Archive </span>
       </div>
-      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu" aria-controls="mobileMenuOverlay" aria-expanded="false">
         <span class="bar"></span> 
         <span class="bar"></span>
         <span class="bar"></span>
@@ -224,6 +243,7 @@
 
       <!-- HOME -->
       <section id="home" class="tab-content">
+        <div class="scroll-hint float-appear float-loop">More content below</div>
         <!-- <a href="/index.html" class="back-btn">Back</a> -->
         <!-- <b><p class="text">The template has not been made public yet because the code still has some bugs.</p></b>
         <p class="text">Archivable Website is a template website designed for users who are new to coding.</p>
@@ -271,6 +291,7 @@
 
       <!-- RESOURCES -->
       <section id="resources" class="tab-content hidden">
+        <div class="scroll-hint float-appear float-loop">More content below</div>
         <input type="text" id="searchBox" placeholder="Search by Number">
 
         <div class="content-item">
@@ -330,6 +351,7 @@
       <!-- ARTICLE -->
       <section id="article" class="tab-content hidden">
         <div id="articleListView" class="article-view">
+          <div class="scroll-hint float-appear float-loop">More content below</div>
           <input type="text" id="articleSearchBox" placeholder="Search by Number">
           <div class="content-item">
             <div class="box"></div>
@@ -352,6 +374,14 @@
             <div class="text">
               <button type="button" class="article-open-btn text-a" data-article-target="articlePageA03">
                 A03 (FFMpeg 01) - FFMpeg Installation
+              </button>
+            </div>
+          </div>
+          <div class="content-item">
+            <div class="box"></div>
+            <div class="text">
+              <button type="button" class="article-open-btn text-a" data-article-target="articlePagemer01">
+                Mer01 Backstage Preparation
               </button>
             </div>
           </div>
@@ -403,6 +433,16 @@
             <div class="text-2">A03 (FFMpeg 01) - FFMpeg Installation</div>
             <hr>
             <p class="text">Developing.</p>
+          </article>
+
+          <article id="articlePagemer01" class="content-item-2 article-detail-card">
+            <div class="text-2">Mer01 - Backstage Preparation</div>
+            <hr>
+            <p class="text">- 1 Wired(Rostrum) Mic</p>
+            <p class="text">- 1/2 Wireless Mic (Senn-1 & Senn-2)</p>
+            <p class="text">- If full assembly, take the computer from ctrl room</p>
+            <p class="text">- Unplug the HDMI by ourself</p>
+            <p class="text">- Test the mic</p>
           </article>
         </div>
       </section>
@@ -675,22 +715,27 @@
 
       <!-- Configuration -->
       <section id="conf" class="tab-content hidden">
-        <div class="content-item-39">
-          <div class="text-2">
-            system: ArchOS v3
-            <br>
-            system version: 1.8
-            <br>
-            version: 2.1
-            <br>
-            terminal version: 1.0
-            <br>
-            mobile: support
-            <br>
-            animation: 1.2
-            <br>
-            
-          </div>
+        <div class="system-config float-appear">
+          <p class="config-line float-appear"><span class="config-key">System:</span> ArchOS v3</p>
+          <p class="config-line float-appear"><span class="config-key">System Name:</span> ArchOS</p>
+          <p class="config-line float-appear"><span class="config-key">System Engine:</span> ArchEngine v21.772.81</p>
+          <p class="config-line float-appear"><span class="config-key">System Version:</span> 1.820.3</p>
+          <p class="config-line float-appear"><span class="config-key">System Edition:</span> Pure Template (Allowed to code)</p>
+          <p class="config-line float-appear"><span class="config-key">System Channel:</span> Public Stable</p>
+          <p class="config-line float-appear"><span class="config-key">System Status:</span> Working</p>
+          <p class="config-line float-appear"><span class="config-key">Server Status:</span> Working</p>
+          <p class="config-line float-appear"><span class="config-key">Website Version:</span> 3.9.2</p>
+          <p class="config-line float-appear"><span class="config-key">Terminal Version:</span> 1.0</p>
+          <p class="config-line float-appear"><span class="config-key">BIOS Version:</span> 1.0</p>
+          <p class="config-line float-appear"><span class="config-key">Mobile Support:</span> Yes</p>
+          <p class="config-line float-appear"><span class="config-key">Animation Version:</span> 1.3.1</p>
+          <p class="config-line float-appear"><span class="config-key">Styling Version:</span> 1.2</p>
+          <p class="config-line float-appear"><span class="config-key">Abandoned Feature:</span> 1</p>
+          <p class="config-line float-appear"><span class="config-key">Permission for User:</span> Read-only</p>
+          <p class="config-line float-appear"><span class="config-key">Permission for Developer:</span> Developer</p>
+          <p class="config-line float-appear"><span class="config-key">Permission for Author:</span> Everything (Developer)</p>
+          <p class="config-line float-appear"><span class="config-key">Installed Extension(s):</span> 0</p>
+          <p class="config-line float-appear"><span class="config-key"></span> </p>
         </div>
       </section>
 
@@ -698,6 +743,7 @@
       <!-- UPDATE -->
 <section id="update" class="tab-content hidden">
   <div class="update-page">
+    <div class="scroll-hint float-appear float-loop">More content below</div>
     <div class="update-header">
       <!-- <div class="text-2">Release Notes</div> -->
       <!-- <p class="text">Open a version to see full notes. Latest updates stay at the top.</p> -->
@@ -713,8 +759,49 @@
       <details class="update-item" open data-tag="new-release">
         <summary>
           <div class="update-title">
-            <span class="update-version">v3 - Major Update</span>
+            <span class="update-version">v3.9.2 (Build 2613)</span>
             <span class="update-subtitle update-pill update-pill-orange">New Release</span>
+          </div>
+        </summary>
+        <div class="update-body">
+          <p class="text-2-para">- Improved animation: Now the animation will trigger based on the size of screen</p>
+          <p class="text-2-para">- Improved Mobile UI Design</p>
+          <p class="text-2-para">- (Mobile) Added terminal option at bottom-right corner</p>
+          <p class="text-2-para">- (PC) Added custom right click menu</p>
+        </div>
+      </details>
+
+      <details class="update-item" data-tag="private-beta">
+        <summary>
+          <div class="update-title">
+            <span class="update-version">v 4.2.3 (Build 18204)</span>
+            <span class="update-subtitle update-pill update-pill-blue">Private Beta</span>
+          </div>
+        </summary>
+        <div class="update-body">
+          <p class="text-2-para">- Added more filter tag</p>
+          <p class="text-2-para">- Improved code structure</p>
+        </div>
+      </details>
+
+      <hr>
+
+      <details class="update-item" data-tag="new-release">
+        <summary>
+          <div class="update-title">
+            <span class="update-version">v3.8.2 (Build 2502)</span>
+            <span class="update-subtitle update-pill update-pill-orange">New Release</span>
+          </div>
+        </summary>
+        <div class="update-body">
+          <p class="text-2-para">- Improved mobile UI</p>
+        </div>
+      </details>
+
+      <details class="update-item"  data-tag="">
+        <summary>
+          <div class="update-title">
+            <span class="update-version">v3 (Build 2309)</span>
           </div>
         </summary>
         <div class="update-body">
@@ -729,7 +816,7 @@
       <details class="update-item" data-tag="private-beta">
         <summary>
           <div class="update-title">
-            <span class="update-version">v 4.2.2</span>
+            <span class="update-version">v 4.2.2 (Build 18200)</span>
             <span class="update-subtitle update-pill update-pill-blue">Private Beta</span>
           </div>
         </summary>
@@ -742,7 +829,7 @@
       <details class="update-item" data-tag="private-beta">
         <summary>
           <div class="update-title">
-            <span class="update-version">v 4.2.1</span>
+            <span class="update-version">v 4.2.1 (Build 15634)</span>
             <span class="update-subtitle update-pill update-pill-blue">Private Beta</span>
           </div>
         </summary>
@@ -814,7 +901,7 @@
     <div class="app-window-resize-handle" id="appsSettingsResize" aria-hidden="true"></div>
   </div>
 
-  <div id="mobileMenuOverlay" class="mobile-menu-overlay">
+  <div id="mobileMenuOverlay" class="mobile-menu-overlay" aria-hidden="true">
     <button class="mobile-menu-close" id="mobileMenuClose">&times;</button>
     <div class="mobile-menu-list">
       <a class="mobile-nav-link nav-link" data-tab="article">Article</a>
@@ -828,6 +915,38 @@
     </div>
   </div>
 
+  <div id="customContextMenu" class="custom-context-menu" role="menu" aria-hidden="true">
+    <button type="button" class="custom-context-item" data-action="cut" role="menuitem">Cut</button>
+    <button type="button" class="custom-context-item" data-action="copy" role="menuitem">Copy</button>
+    <button type="button" class="custom-context-item" data-action="paste" role="menuitem">Paste</button>
+    <div class="custom-context-sep" aria-hidden="true"></div>
+    <button type="button" class="custom-context-item is-terminal" data-action="terminal" role="menuitem">Terminal</button>
+  </div>
+
+  <div id="terminalLauncherDesktop" class="terminal-launcher-desktop hidden" aria-hidden="true">
+    <div class="terminal-launcher-title">Run</div>
+    <div class="terminal-input-row terminal-launcher-row">
+      <input type="text" id="terminalLauncherDesktopInput" class="terminal-input" placeholder="Type a command">
+      <button id="terminalLauncherDesktopRun" class="btn-primary terminal-run-btn" type="button">Run</button>
+      <button id="terminalLauncherDesktopClose" class="btn-small danger" type="button">Close</button>
+    </div>
+    <div id="terminalLauncherDesktopOutput" class="terminal-output" aria-live="polite"></div>
+  </div>
+
+  <div id="terminalLauncherMobile" class="terminal-launcher-mobile" aria-hidden="true">
+    <button id="terminalLauncherMobileClose" class="mobile-menu-close terminal-launcher-mobile-close" type="button" aria-label="Close terminal">&times;</button>
+    <div class="terminal-launcher-mobile-shell">
+      <div class="terminal-launcher-title">Run</div>
+      <div class="terminal-input-row terminal-launcher-row">
+        <input type="text" id="terminalLauncherMobileInput" class="terminal-input" placeholder="Type a command">
+        <button id="terminalLauncherMobileRun" class="btn-primary terminal-run-btn" type="button">Run</button>
+      </div>
+      <div id="terminalLauncherMobileOutput" class="terminal-output" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <button id="mobileTerminalFab" class="mobile-terminal-fab" type="button" aria-label="Open terminal">Terminal</button>
+
   <script>
     (function() {
       var menuBtn = document.getElementById('mobileMenuBtn');
@@ -835,24 +954,100 @@
       var menuClose = document.getElementById('mobileMenuClose');
       var menuLinks = document.querySelectorAll('.mobile-nav-link');
       var appContainer = document.getElementById('appContainer');
+      var isOpen = false;
+      var scrollTop = 0;
 
-      function openMenu() {
-        menuOverlay.classList.add('active');
-        if (appContainer) appContainer.classList.add('blur-active');
+      function lockBodyScroll() {
+        scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+        document.body.style.position = 'fixed';
+        document.body.style.top = '-' + scrollTop + 'px';
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
         document.body.style.overflow = 'hidden';
       }
-      function closeMenu() {
-        menuOverlay.classList.remove('active');
-        if (appContainer) appContainer.classList.remove('blur-active');
+
+      function unlockBodyScroll() {
+        var topValue = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
         document.body.style.overflow = '';
+        var restoreY = scrollTop;
+        if (topValue) {
+          var parsedTop = Math.abs(parseInt(topValue, 10));
+          if (!isNaN(parsedTop)) {
+            restoreY = parsedTop;
+          }
+        }
+        window.scrollTo(0, restoreY);
       }
 
-      if (menuBtn) menuBtn.addEventListener('click', openMenu);
+      function syncA11yState(opened) {
+        if (menuBtn) {
+          menuBtn.setAttribute('aria-expanded', opened ? 'true' : 'false');
+        }
+        if (menuOverlay) {
+          menuOverlay.setAttribute('aria-hidden', opened ? 'false' : 'true');
+        }
+      }
+
+      function openMenu() {
+        if (!menuOverlay || isOpen) return;
+        isOpen = true;
+        menuOverlay.classList.add('active');
+        if (appContainer) appContainer.classList.add('blur-active');
+        lockBodyScroll();
+        syncA11yState(true);
+      }
+      function closeMenu() {
+        if (!menuOverlay || !isOpen) return;
+        isOpen = false;
+        menuOverlay.classList.remove('active');
+        if (appContainer) appContainer.classList.remove('blur-active');
+        unlockBodyScroll();
+        syncA11yState(false);
+      }
+
+      if (menuBtn) {
+        menuBtn.addEventListener('click', function(event) {
+          event.preventDefault();
+          if (isOpen) {
+            closeMenu();
+            return;
+          }
+          openMenu();
+        });
+      }
       if (menuClose) menuClose.addEventListener('click', closeMenu);
       
       menuLinks.forEach(function(link) {
         link.addEventListener('click', closeMenu);
       });
+
+      if (menuOverlay) {
+        menuOverlay.addEventListener('click', function(event) {
+          if (event.target === menuOverlay) {
+            closeMenu();
+          }
+        });
+      }
+
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && isOpen) {
+          closeMenu();
+        }
+      });
+
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768 && isOpen) {
+          closeMenu();
+        }
+      });
+
+      syncA11yState(false);
     })();
   </script>
 
