@@ -18,6 +18,8 @@
   var themeShiftTimer = null;
   var snackbarTimer = null;
   var scrollObserver = null;
+  var revealObserverProfile = "";
+  var revealRefreshTimer = null;
   var desktopUnlocked = false;
   var desktopArmed = false;
   var desktopClickCount = 0;
@@ -26,7 +28,8 @@
   var systemWindowZ = 90;
   var systemWindowOffset = 0;
   var articleViewController = null;
-  var revealSelector = ".content-item, .content-item-2, .content-item-3, .content-item-39, .server-status-row, .math-button, .math-instructions, .equation-help, .math-form, .math-result, .math-steps, .calculator-content, .update-header, .update-item";
+  var terminalCommandRunner = null;
+  var revealSelector = ".content-item, .content-item-2, .content-item-3, .content-item-39, .server-status-row, .math-button, .math-instructions, .equation-help, .math-form, .math-result, .math-steps, .calculator-content, .update-header, .update-item, .float-appear";
   var STATUS_TEXT_BY_COLOR = {
     green: "Working",
     yellow: "Corrupted",
@@ -546,7 +549,27 @@
     return Array.prototype.slice.call(scope.querySelectorAll(revealSelector));
   }
 
+  function getViewportMetrics() {
+    var docEl = document.documentElement;
+    return {
+      width: window.innerWidth || (docEl ? docEl.clientWidth : 0) || 0,
+      height: window.innerHeight || (docEl ? docEl.clientHeight : 0) || 0
+    };
+  }
+
+  function getRevealObserverConfig() {
+    var viewport = getViewportMetrics();
+    if (viewport.width <= 540 || viewport.height <= 620) {
+      return { key: "compact", threshold: 0.04, rootMargin: "0px 0px -4% 0px", delayStep: 0.03 };
+    }
+    if (viewport.width <= 960) {
+      return { key: "mobile", threshold: 0.08, rootMargin: "0px 0px -8% 0px", delayStep: 0.035 };
+    }
+    return { key: "desktop", threshold: 0.12, rootMargin: "0px 0px -12% 0px", delayStep: 0.04 };
+  }
+
   function applyStagger(targets) {
+    var delayStep = getRevealObserverConfig().delayStep;
     var groups = new Map();
     targets.forEach(function (element) {
       var group = typeof element.closest === "function" ? element.closest(".tab-content") : null;
@@ -559,7 +582,7 @@
 
     groups.forEach(function (items) {
       items.forEach(function (element, index) {
-        var delay = Math.min(index, 12) * 0.04;
+        var delay = Math.min(index, 12) * delayStep;
         element.style.animationDelay = delay.toFixed(2) + "s";
       });
     });
@@ -580,7 +603,14 @@
   }
 
   function setupScrollAnimations() {
+    if (scrollObserver && typeof scrollObserver.disconnect === "function") {
+      scrollObserver.disconnect();
+    }
+    scrollObserver = null;
+
     var targets = prepareRevealTargets(document);
+    var observerConfig = getRevealObserverConfig();
+    revealObserverProfile = observerConfig.key;
     if (!("IntersectionObserver" in window)) {
       targets.forEach(function (element) {
         element.classList.add("is-visible");
@@ -595,7 +625,7 @@
           scrollObserver.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.12, rootMargin: "0px 0px -10% 0px" });
+    }, { threshold: observerConfig.threshold, rootMargin: observerConfig.rootMargin });
 
     targets.forEach(function (element) {
       scrollObserver.observe(element);
@@ -617,6 +647,20 @@
       element.classList.remove("is-visible");
       scrollObserver.observe(element);
     });
+  }
+
+  function refreshRevealAnimationsForViewport() {
+    if (!("IntersectionObserver" in window)) {
+      return;
+    }
+    var config = getRevealObserverConfig();
+    if (config.key === revealObserverProfile) {
+      return;
+    }
+    setupScrollAnimations();
+    if (activeTab) {
+      resetRevealForTab(activeTab);
+    }
   }
 
   function resetScrollPosition() {
@@ -1040,6 +1084,7 @@
 
     var viewSwitchToken = 0;
     var backBtnAnimTimer = null;
+    var viewRecoveryTimer = null;
 
     function clearViewState(view) {
       if (!view) {
@@ -1057,6 +1102,61 @@
 
     function clearArticleHostMinHeight() {
       articleSection.style.minHeight = "";
+    }
+
+    function clearViewRecoveryTimer() {
+      if (!viewRecoveryTimer) {
+        return;
+      }
+      window.clearTimeout(viewRecoveryTimer);
+      viewRecoveryTimer = null;
+    }
+
+    function setDetailCardsOpacity(value) {
+      detailCards.forEach(function (card) {
+        card.style.opacity = value;
+      });
+    }
+
+    function hideAllDetailCards() {
+      detailCards.forEach(function (card) {
+        card.classList.add("hidden");
+        card.style.display = "none";
+        card.style.opacity = "0";
+      });
+    }
+
+    function isMobileLayoutActive() {
+      if (window.matchMedia) {
+        return window.matchMedia("(max-width: 960px)").matches;
+      }
+      return window.innerWidth <= 960;
+    }
+
+    function forceRevealVisible(scope) {
+      if (!scope) {
+        return;
+      }
+      var targets = getRevealTargets(scope);
+      targets.forEach(function (element) {
+        element.classList.add("reveal-on-scroll");
+        element.classList.add("is-visible");
+        if (scrollObserver) {
+          scrollObserver.unobserve(element);
+        }
+      });
+    }
+
+    function recoverViewVisibility(view, delayMs) {
+      clearViewRecoveryTimer();
+      var waitMs = Math.max(0, Number(delayMs) || 0);
+      viewRecoveryTimer = window.setTimeout(function () {
+        viewRecoveryTimer = null;
+        forceRevealVisible(view);
+        if (isMobileLayoutActive()) {
+          resetScrollPosition();
+        }
+      }, waitMs);
     }
 
     function clearBackButtonFadeClasses() {
@@ -1092,10 +1192,12 @@
       }, articleViewTransitionMs);
     }
 
-    function transitionViews(fromView, toView) {
+    function transitionViews(fromView, toView, options) {
       if (!fromView || !toView || fromView === toView) {
         return;
       }
+      options = options || {};
+      var onComplete = typeof options.onComplete === "function" ? options.onComplete : null;
       clearArticleHostMinHeight();
       if (articleViewTransitionMs === 0) {
         clearViewState(fromView);
@@ -1106,6 +1208,9 @@
         toView.style.display = "";
         clearBackButtonFadeClasses();
         clearArticleHostMinHeight();
+        if (onComplete) {
+          onComplete();
+        }
         return;
       }
 
@@ -1162,6 +1267,9 @@
         clearViewState(fromView);
         clearViewState(toView);
         clearArticleHostMinHeight();
+        if (onComplete) {
+          onComplete();
+        }
       }, articleViewTransitionMs);
     }
 
@@ -1170,16 +1278,13 @@
         var isTarget = card.id === targetId;
         card.classList.toggle("hidden", !isTarget);
         card.style.display = isTarget ? "" : "none";
+        card.style.opacity = isTarget ? "1" : "0";
       });
     }
 
     function showList(forceImmediate) {
-      detailCards.forEach(function (card) {
-        card.classList.add("hidden");
-        card.style.display = "none";
-      });
-
       if (forceImmediate || articleViewTransitionMs === 0 || detailView.classList.contains("hidden")) {
+        hideAllDetailCards();
         clearViewState(listView);
         clearViewState(detailView);
         listView.classList.remove("hidden");
@@ -1188,16 +1293,22 @@
         detailView.style.display = "none";
         clearBackButtonFadeClasses();
         clearArticleHostMinHeight();
+        recoverViewVisibility(listView, 0);
         return;
       }
 
-      transitionViews(detailView, listView);
+      setDetailCardsOpacity("0");
+      transitionViews(detailView, listView, {
+        onComplete: hideAllDetailCards
+      });
+      recoverViewVisibility(listView, articleViewTransitionMs);
     }
 
     function openArticle(targetId) {
       if (!targetId || !document.getElementById(targetId)) {
         return;
       }
+      setDetailCardsOpacity("1");
       showArticleCard(targetId);
       if (listView.classList.contains("hidden") || articleViewTransitionMs === 0) {
         listView.classList.add("hidden");
@@ -1206,9 +1317,11 @@
         detailView.style.display = "";
         runBackButtonFade("in");
         clearArticleHostMinHeight();
+        recoverViewVisibility(detailView, 0);
         return;
       }
       transitionViews(listView, detailView);
+      recoverViewVisibility(detailView, articleViewTransitionMs);
     }
 
     openButtons.forEach(function (btn) {
@@ -2696,6 +2809,30 @@
     });
   }
 
+  function setupZoomGuards() {
+    document.addEventListener("wheel", function (event) {
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+
+    document.addEventListener("keydown", function (event) {
+      if (!(event.ctrlKey || event.metaKey)) {
+        return;
+      }
+      var key = String(event.key || "").toLowerCase();
+      if (key === "+" || key === "=" || key === "-" || key === "_" || key === "0") {
+        event.preventDefault();
+      }
+    });
+
+    ["gesturestart", "gesturechange", "gestureend"].forEach(function (name) {
+      document.addEventListener(name, function (event) {
+        event.preventDefault();
+      }, { passive: false });
+    });
+  }
+
   function setupTerminalCommands() {
     var terminalSection = document.getElementById("terminal");
     if (!terminalSection) {
@@ -2708,51 +2845,66 @@
       return;
     }
 
-    function renderHelp() {
-      output.innerHTML =
-        "<div class=\"terminal-output-title\">Commands</div>" +
-        "<div class=\"terminal-command\">/help - Show general command list</div>" +
-        "<div class=\"terminal-command\">ent terminal -i - Enter terminal</div>" +
-        "<div class=\"terminal-command\">/remove rem-rest -f user - Enable desktop access</div>";
-      output.classList.remove("is-animating");
-      void output.offsetWidth;
-      output.classList.add("is-animating");
+    function renderOutput(targetOutput, title, lines) {
+      if (!targetOutput) {
+        return;
+      }
+      var content = "<div class=\"terminal-output-title\">" + title + "</div>";
+      lines.forEach(function (line) {
+        content += "<div class=\"terminal-command\">" + line + "</div>";
+      });
+      targetOutput.innerHTML = content;
+      targetOutput.classList.remove("is-animating");
+      void targetOutput.offsetWidth;
+      targetOutput.classList.add("is-animating");
     }
 
-    function renderInfo(message) {
-      output.innerHTML =
-        "<div class=\"terminal-output-title\">Info</div>" +
-        "<div class=\"terminal-command\">" + message + "</div>";
-      output.classList.remove("is-animating");
-      void output.offsetWidth;
-      output.classList.add("is-animating");
+    function renderHelp(targetOutput) {
+      renderOutput(targetOutput, "Commands", [
+        "/help - Show general command list",
+        "ent terminal -i - Enter terminal",
+        "/remove rem-rest -f user - Enable desktop access"
+      ]);
     }
+
+    function renderInfo(targetOutput, message) {
+      renderOutput(targetOutput, "Info", [message]);
+    }
+
+    terminalCommandRunner = function (raw, targetOutput) {
+      var source = String(raw || "").trim();
+      if (!source) {
+        return;
+      }
+      var normalized = source.toLowerCase().replace(/\s+/g, " ").trim();
+      if (normalized === "/help") {
+        renderHelp(targetOutput);
+        return;
+      }
+      if (normalized === "ent terminal -i" || normalized === "enter terminal -i") {
+        renderInfo(targetOutput, "Terminal mode is coming soon.");
+        return;
+      }
+      if (normalized === "/remove rem-rest -f user") {
+        if (desktopUnlocked) {
+          renderInfo(targetOutput, "Desktop access is already enabled.");
+          return;
+        }
+        desktopArmed = true;
+        desktopClickCount = 0;
+        renderInfo(targetOutput, "Desktop access armed. Click Download Archive title five times.");
+        return;
+      }
+      notifySnackbar("Unknown Command");
+    };
 
     function handleRun() {
       var raw = String(input.value || "").trim();
       if (!raw) {
         return;
       }
-      var normalized = raw.toLowerCase().replace(/\s+/g, " ").trim();
-      if (normalized === "/help") {
-        renderHelp();
-        return;
-      }
-      if (normalized === "ent terminal -i" || normalized === "enter terminal -i") {
-        renderInfo("Terminal mode is coming soon.");
-        return;
-      }
-      if (normalized === "/remove rem-rest -f user") {
-        if (desktopUnlocked) {
-          renderInfo("Desktop access is already enabled.");
-          return;
-        }
-        desktopArmed = true;
-        desktopClickCount = 0;
-        renderInfo("Desktop access armed. Click Download Archive title five times.");
-        return;
-      }
-      notifySnackbar("Unknown Command");
+      terminalCommandRunner(raw, output);
+      input.value = "";
     }
 
     runBtn.addEventListener("click", handleRun);
@@ -2762,6 +2914,459 @@
         handleRun();
       }
     });
+  }
+
+  function setupCustomContextMenu() {
+    var contextMenu = document.getElementById("customContextMenu");
+    if (!contextMenu) {
+      return;
+    }
+
+    var desktopLauncher = document.getElementById("terminalLauncherDesktop");
+    var desktopLauncherInput = document.getElementById("terminalLauncherDesktopInput");
+    var desktopLauncherRun = document.getElementById("terminalLauncherDesktopRun");
+    var desktopLauncherClose = document.getElementById("terminalLauncherDesktopClose");
+    var desktopLauncherOutput = document.getElementById("terminalLauncherDesktopOutput");
+
+    var mobileLauncher = document.getElementById("terminalLauncherMobile");
+    var mobileLauncherInput = document.getElementById("terminalLauncherMobileInput");
+    var mobileLauncherRun = document.getElementById("terminalLauncherMobileRun");
+    var mobileLauncherClose = document.getElementById("terminalLauncherMobileClose");
+    var mobileLauncherOutput = document.getElementById("terminalLauncherMobileOutput");
+    var mobileTerminalFab = document.getElementById("mobileTerminalFab");
+
+    var contextItems = {
+      cut: contextMenu.querySelector('[data-action="cut"]'),
+      copy: contextMenu.querySelector('[data-action="copy"]'),
+      paste: contextMenu.querySelector('[data-action="paste"]'),
+      terminal: contextMenu.querySelector('[data-action="terminal"]')
+    };
+
+    var textInputTypes = {
+      "text": true,
+      "search": true,
+      "url": true,
+      "tel": true,
+      "password": true,
+      "email": true,
+      "number": true
+    };
+
+    var state = {
+      target: null,
+      editable: null,
+      selectionText: "",
+      canCut: false,
+      canCopy: false,
+      canPaste: false
+    };
+    var mobileFabPrimed = false;
+    var mobileFabIntroTimer = null;
+
+    function isMobileViewport() {
+      if (window.matchMedia) {
+        return window.matchMedia("(max-width: 960px)").matches;
+      }
+      return window.innerWidth <= 960;
+    }
+
+    function isTextInputElement(element) {
+      if (!element || element.tagName !== "INPUT") {
+        return false;
+      }
+      var type = String(element.type || "text").toLowerCase();
+      return Boolean(textInputTypes[type]);
+    }
+
+    function getEditableElement(target) {
+      var current = target;
+      while (current && current !== document.body) {
+        if (current.tagName === "TEXTAREA" || isTextInputElement(current) || current.isContentEditable) {
+          return current;
+        }
+        current = current.parentElement;
+      }
+      return null;
+    }
+
+    function isReadOnlyEditable(element) {
+      if (!element) {
+        return true;
+      }
+      if (element.tagName === "INPUT" || element.tagName === "TEXTAREA") {
+        return element.disabled || element.readOnly;
+      }
+      return !element.isContentEditable;
+    }
+
+    function getSelectionText(editable) {
+      if (!editable) {
+        var docSelection = window.getSelection ? window.getSelection() : null;
+        return docSelection ? docSelection.toString() : "";
+      }
+
+      if (editable.tagName === "INPUT" || editable.tagName === "TEXTAREA") {
+        var start = typeof editable.selectionStart === "number" ? editable.selectionStart : 0;
+        var end = typeof editable.selectionEnd === "number" ? editable.selectionEnd : 0;
+        if (end > start) {
+          return String(editable.value || "").slice(start, end);
+        }
+        return "";
+      }
+
+      var selection = window.getSelection ? window.getSelection() : null;
+      return selection ? selection.toString() : "";
+    }
+
+    function setActionEnabled(action, enabled) {
+      var item = contextItems[action];
+      if (!item) {
+        return;
+      }
+      item.classList.toggle("is-disabled", !enabled);
+      item.setAttribute("aria-disabled", enabled ? "false" : "true");
+    }
+
+    function syncActionState() {
+      setActionEnabled("cut", state.canCut);
+      setActionEnabled("copy", state.canCopy);
+      setActionEnabled("paste", state.canPaste);
+      setActionEnabled("terminal", true);
+    }
+
+    function updateStateFromTarget(target) {
+      state.target = target;
+      state.editable = getEditableElement(target);
+      state.selectionText = getSelectionText(state.editable);
+      var hasSelection = state.selectionText.length > 0;
+      var editableReadOnly = isReadOnlyEditable(state.editable);
+      var editableWritable = Boolean(state.editable) && !editableReadOnly;
+
+      state.canCut = editableWritable && hasSelection;
+      state.canPaste = editableWritable;
+      if (editableWritable || (state.editable && editableReadOnly)) {
+        state.canCopy = hasSelection;
+      } else {
+        state.canCopy = hasSelection;
+      }
+      syncActionState();
+    }
+
+    function hideContextMenu() {
+      contextMenu.classList.remove("is-open");
+      contextMenu.setAttribute("aria-hidden", "true");
+    }
+
+    function showContextMenu(x, y) {
+      var width = contextMenu.offsetWidth || 200;
+      var height = contextMenu.offsetHeight || 180;
+      var left = Math.max(8, Math.min(x, window.innerWidth - width - 8));
+      var top = Math.max(8, Math.min(y, window.innerHeight - height - 8));
+      contextMenu.style.left = left + "px";
+      contextMenu.style.top = top + "px";
+      contextMenu.classList.add("is-open");
+      contextMenu.setAttribute("aria-hidden", "false");
+    }
+
+    function closeDesktopLauncher() {
+      if (!desktopLauncher) {
+        return;
+      }
+      desktopLauncher.classList.add("hidden");
+      desktopLauncher.setAttribute("aria-hidden", "true");
+    }
+
+    function openDesktopLauncher() {
+      if (!desktopLauncher) {
+        return;
+      }
+      desktopLauncher.classList.remove("hidden");
+      desktopLauncher.setAttribute("aria-hidden", "false");
+      if (desktopLauncherInput) {
+        window.setTimeout(function () {
+          desktopLauncherInput.focus();
+        }, 0);
+      }
+    }
+
+    function closeMobileLauncher() {
+      if (!mobileLauncher) {
+        return;
+      }
+      mobileLauncher.classList.remove("is-open");
+      mobileLauncher.setAttribute("aria-hidden", "true");
+    }
+
+    function showMobileFabIntro() {
+      if (!mobileTerminalFab) {
+        return;
+      }
+      mobileTerminalFab.classList.remove("is-visible");
+      mobileTerminalFab.classList.remove("is-armed");
+      mobileFabPrimed = false;
+      if (mobileFabIntroTimer) {
+        window.clearTimeout(mobileFabIntroTimer);
+        mobileFabIntroTimer = null;
+      }
+      mobileFabIntroTimer = window.setTimeout(function () {
+        mobileFabIntroTimer = null;
+        mobileTerminalFab.classList.add("is-visible");
+      }, 3200);
+    }
+
+    function openMobileLauncher() {
+      if (!mobileLauncher) {
+        return;
+      }
+      mobileLauncher.classList.add("is-open");
+      mobileLauncher.setAttribute("aria-hidden", "false");
+      if (mobileLauncherInput) {
+        window.setTimeout(function () {
+          mobileLauncherInput.focus();
+        }, 0);
+      }
+    }
+
+    function openTerminalLauncher() {
+      if (isMobileViewport()) {
+        closeDesktopLauncher();
+        openMobileLauncher();
+        return;
+      }
+      closeMobileLauncher();
+      openDesktopLauncher();
+    }
+
+    function tryExecCommand(command) {
+      try {
+        return document.execCommand(command);
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function insertTextIntoEditable(target, text) {
+      if (!target || !text) {
+        return;
+      }
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+        var start = typeof target.selectionStart === "number" ? target.selectionStart : target.value.length;
+        var end = typeof target.selectionEnd === "number" ? target.selectionEnd : start;
+        target.focus();
+        target.setRangeText(text, start, end, "end");
+        target.dispatchEvent(new Event("input", { bubbles: true }));
+        return;
+      }
+      target.focus();
+      try {
+        if (document.execCommand("insertText", false, text)) {
+          return;
+        }
+      } catch (error) {
+      }
+      var selection = window.getSelection ? window.getSelection() : null;
+      if (!selection || !selection.rangeCount) {
+        target.appendChild(document.createTextNode(text));
+        return;
+      }
+      var range = selection.getRangeAt(0);
+      range.deleteContents();
+      var node = document.createTextNode(text);
+      range.insertNode(node);
+      range.setStartAfter(node);
+      range.setEndAfter(node);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    async function copySelectionText(text) {
+      if (!text) {
+        return false;
+      }
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (error) {
+        }
+      }
+      return tryExecCommand("copy");
+    }
+
+    async function handleCopy() {
+      if (!state.canCopy || !state.selectionText) {
+        return;
+      }
+      var copied = await copySelectionText(state.selectionText);
+      if (!copied) {
+        notifySnackbar("Copy blocked by browser.");
+      }
+    }
+
+    async function handleCut() {
+      if (!state.canCut || !state.editable) {
+        return;
+      }
+      var target = state.editable;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+        var start = typeof target.selectionStart === "number" ? target.selectionStart : 0;
+        var end = typeof target.selectionEnd === "number" ? target.selectionEnd : 0;
+        if (end <= start) {
+          return;
+        }
+        var selected = String(target.value || "").slice(start, end);
+        var copied = await copySelectionText(selected);
+        if (copied) {
+          target.setRangeText("", start, end, "start");
+          target.dispatchEvent(new Event("input", { bubbles: true }));
+        } else {
+          notifySnackbar("Cut blocked by browser.");
+        }
+        return;
+      }
+      var cutDone = tryExecCommand("cut");
+      if (!cutDone) {
+        notifySnackbar("Cut blocked by browser.");
+      }
+    }
+
+    async function handlePaste() {
+      if (!state.canPaste || !state.editable) {
+        return;
+      }
+      if (navigator.clipboard && typeof navigator.clipboard.readText === "function") {
+        try {
+          var text = await navigator.clipboard.readText();
+          insertTextIntoEditable(state.editable, text);
+          return;
+        } catch (error) {
+        }
+      }
+      var pasted = tryExecCommand("paste");
+      if (!pasted) {
+        notifySnackbar("Paste blocked by browser.");
+      }
+    }
+
+    function runLauncherCommand(inputEl, outputEl) {
+      if (!inputEl || !outputEl) {
+        return;
+      }
+      var raw = String(inputEl.value || "").trim();
+      if (!raw) {
+        return;
+      }
+      if (typeof terminalCommandRunner === "function") {
+        terminalCommandRunner(raw, outputEl);
+      } else {
+        outputEl.innerHTML =
+          "<div class=\"terminal-output-title\">Info</div>" +
+          "<div class=\"terminal-command\">Terminal is not ready.</div>";
+      }
+      inputEl.value = "";
+    }
+
+    document.addEventListener("contextmenu", function (event) {
+      if (event.target && (event.target.closest(".app-window-iframe") || event.target.closest("iframe"))) {
+        return;
+      }
+      event.preventDefault();
+      updateStateFromTarget(event.target);
+      showContextMenu(event.clientX, event.clientY);
+    });
+
+    document.addEventListener("mousedown", function (event) {
+      if (!contextMenu.classList.contains("is-open")) {
+        return;
+      }
+      if (!contextMenu.contains(event.target)) {
+        hideContextMenu();
+      }
+    });
+
+    window.addEventListener("scroll", hideContextMenu, true);
+    window.addEventListener("resize", hideContextMenu);
+    window.addEventListener("blur", hideContextMenu);
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        hideContextMenu();
+        closeDesktopLauncher();
+        closeMobileLauncher();
+      }
+    });
+
+    contextMenu.addEventListener("click", async function (event) {
+      var item = event.target.closest(".custom-context-item");
+      if (!item) {
+        return;
+      }
+      var action = item.dataset.action;
+      if (item.classList.contains("is-disabled") || item.getAttribute("aria-disabled") === "true") {
+        return;
+      }
+
+      if (action === "cut") {
+        await handleCut();
+      } else if (action === "copy") {
+        await handleCopy();
+      } else if (action === "paste") {
+        await handlePaste();
+      } else if (action === "terminal") {
+        openTerminalLauncher();
+      }
+      hideContextMenu();
+    });
+
+    if (desktopLauncherRun) {
+      desktopLauncherRun.addEventListener("click", function () {
+        runLauncherCommand(desktopLauncherInput, desktopLauncherOutput);
+      });
+    }
+    if (desktopLauncherInput) {
+      desktopLauncherInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          runLauncherCommand(desktopLauncherInput, desktopLauncherOutput);
+        }
+      });
+    }
+    if (desktopLauncherClose) {
+      desktopLauncherClose.addEventListener("click", closeDesktopLauncher);
+    }
+
+    if (mobileLauncherRun) {
+      mobileLauncherRun.addEventListener("click", function () {
+        runLauncherCommand(mobileLauncherInput, mobileLauncherOutput);
+      });
+    }
+    if (mobileLauncherInput) {
+      mobileLauncherInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          runLauncherCommand(mobileLauncherInput, mobileLauncherOutput);
+        }
+      });
+    }
+    if (mobileLauncherClose) {
+      mobileLauncherClose.addEventListener("click", closeMobileLauncher);
+    }
+
+    if (mobileTerminalFab) {
+      showMobileFabIntro();
+      mobileTerminalFab.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        hideContextMenu();
+        if (!mobileFabPrimed) {
+          mobileFabPrimed = true;
+          mobileTerminalFab.classList.add("is-visible");
+          mobileTerminalFab.classList.add("is-armed");
+          return;
+        }
+        openTerminalLauncher();
+      });
+    }
   }
 
   function applyDarkTheme() {
@@ -2781,6 +3386,21 @@
   setupUpdateFilters();
   setupUpdateAccordionAnimations();
   setupTerminalCommands();
+  setupZoomGuards();
+  setupCustomContextMenu();
+
+  function scheduleRevealRefresh() {
+    if (revealRefreshTimer) {
+      window.clearTimeout(revealRefreshTimer);
+    }
+    revealRefreshTimer = window.setTimeout(function () {
+      revealRefreshTimer = null;
+      refreshRevealAnimationsForViewport();
+    }, 120);
+  }
+
+  window.addEventListener("resize", scheduleRevealRefresh);
+  window.addEventListener("orientationchange", scheduleRevealRefresh);
   setupScrollAnimations();
 
   var initialTabId = getInitialTabId();
