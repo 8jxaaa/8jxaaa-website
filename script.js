@@ -21,20 +21,60 @@
   var revealObserverProfile = "";
   var revealRefreshTimer = null;
   var desktopUnlocked = false;
-  var desktopArmed = false;
-  var desktopClickCount = 0;
   var NOTES_FILES_KEY = "archNotesFilesV1";
   var pendingNotesPayload = null;
   var systemWindowZ = 90;
   var systemWindowOffset = 0;
   var articleViewController = null;
   var terminalCommandRunner = null;
+  var FORCE_UI_KEY = "archForcedUiMode";
+  var UPDATE_REMINDER_DISABLED_KEY = "archUpdateReminderDisabled";
+  var UPDATE_REMINDER_SESSION_KEY = "archUpdateReminderDismissed";
   var revealSelector = ".content-item, .content-item-2, .content-item-3, .content-item-39, .server-status-row, .math-button, .math-instructions, .equation-help, .math-form, .math-result, .math-steps, .calculator-content, .update-header, .update-item, .float-appear";
   var STATUS_TEXT_BY_COLOR = {
     green: "Working",
     yellow: "Corrupted",
     red: "Not Working"
   };
+
+  function getTabTransitionDuration() {
+    if (prefersReducedMotion) {
+      return 0;
+    }
+    return document.body.classList.contains("arch-upgraded") ? 420 : tabTransitionMs;
+  }
+
+  function getForcedUiMode() {
+    if (document.body.classList.contains("force-mobile-ui")) {
+      return "mobile";
+    }
+    if (document.body.classList.contains("force-pc-ui")) {
+      return "pc";
+    }
+    return "";
+  }
+
+  function applyForcedUiMode(mode) {
+    var normalized = mode === "mobile" || mode === "pc" ? mode : "";
+    document.body.classList.toggle("force-mobile-ui", normalized === "mobile");
+    document.body.classList.toggle("force-pc-ui", normalized === "pc");
+    try {
+      if (normalized) {
+        window.localStorage.setItem(FORCE_UI_KEY, normalized);
+      } else {
+        window.localStorage.removeItem(FORCE_UI_KEY);
+      }
+    } catch (error) {
+    }
+  }
+
+  function applyStoredUiMode() {
+    try {
+      applyForcedUiMode(window.localStorage.getItem(FORCE_UI_KEY) || "");
+    } catch (error) {
+      applyForcedUiMode("");
+    }
+  }
 
   function setWebsiteGroupOpen(isOpen) {
     if (!websiteGroup || !websiteToggle) {
@@ -141,20 +181,8 @@
       return;
     }
     appTitle.addEventListener("click", function () {
-      if (desktopUnlocked) {
-        enterDesktop();
-        return;
-      }
-      if (!desktopArmed) {
-        return;
-      }
-      desktopClickCount += 1;
-      if (desktopClickCount >= 5) {
-        desktopUnlocked = true;
-        desktopArmed = false;
-        desktopClickCount = 0;
-        enterDesktop();
-      }
+      desktopUnlocked = true;
+      enterDesktop();
     });
   }
 
@@ -382,37 +410,166 @@
   }
 
   function setupDesktopShell() {
-    if (!desktopAppsGrid) {
+    if (!desktopShell) {
       return;
     }
-    var downloadBtn = desktopAppsGrid.querySelector("[data-app=\"download\"]");
-    var settingsBtn = desktopAppsGrid.querySelector("[data-app=\"settings\"]");
-    var filesBtn = desktopAppsGrid.querySelector("[data-app=\"files\"]");
-    var notesBtn = desktopAppsGrid.querySelector("[data-app=\"notes\"]");
+    var clocks = document.querySelectorAll("[data-desktop-clock]");
+    var dates = document.querySelectorAll("[data-desktop-date]");
+    var taskbarClock = document.getElementById("desktopTaskbarClock");
+    var calendars = document.querySelectorAll("[data-desktop-calendar]");
+    var desktopWidgets = document.getElementById("desktopWidgets");
+    var exitBtn = document.getElementById("desktopExitBtn");
+    var compactToggle = document.getElementById("desktopCompactToggle");
+    var widgetToggle = document.getElementById("desktopWidgetToggle");
+    var motionToggle = document.getElementById("desktopMotionToggle");
+    var settingsOpenFiles = document.getElementById("settingsOpenFiles");
+    var settingsOpenNotes = document.getElementById("settingsOpenNotes");
+    var settingsOpenTerminal = document.getElementById("settingsOpenTerminal");
+    var settingsExitDesktop = document.getElementById("settingsExitDesktop");
+    var systemOverlay = document.getElementById("systemAppOverlay");
+    var systemClose = document.getElementById("systemAppClose");
 
-    if (downloadBtn) {
-      downloadBtn.addEventListener("click", function () {
-        exitDesktop();
-      });
+    function shouldUseSystemOverlay() {
+      var forcedMode = getForcedUiMode();
+      if (forcedMode === "mobile") {
+        return true;
+      }
+      if (forcedMode === "pc") {
+        return false;
+      }
+      if (window.matchMedia) {
+        return window.matchMedia("(max-width: 540px)").matches;
+      }
+      return window.innerWidth <= 540;
     }
-    if (settingsBtn) {
-      settingsBtn.addEventListener("click", function () {
+
+    function runDesktopApp(appName) {
+      if (appName === "download") {
+        exitDesktop();
+        return;
+      }
+      if (appName === "settings") {
         var openBtn = document.getElementById("appsSettingsBtn");
         if (openBtn) {
           openBtn.click();
         }
-      });
-    }
-    if (filesBtn) {
-      filesBtn.addEventListener("click", function () {
+        return;
+      }
+      if (appName === "files") {
         openFilesWindow();
-      });
-    }
-    if (notesBtn) {
-      notesBtn.addEventListener("click", function () {
+        return;
+      }
+      if (appName === "notes") {
         openNotesWindow();
+        return;
+      }
+      if (appName === "terminal") {
+        if (typeof window.openArchTerminalLauncher === "function") {
+          window.openArchTerminalLauncher();
+        } else {
+          exitDesktop();
+          showTab("terminal");
+        }
+        return;
+      }
+      if (appName === "system") {
+        if (shouldUseSystemOverlay() && systemOverlay) {
+          systemOverlay.classList.add("is-open");
+          systemOverlay.setAttribute("aria-hidden", "false");
+          return;
+        }
+        if (desktopWidgets) {
+          desktopWidgets.classList.remove("is-focused");
+          void desktopWidgets.offsetWidth;
+          desktopWidgets.classList.add("is-focused");
+          if (typeof desktopWidgets.scrollIntoView === "function") {
+            desktopWidgets.scrollIntoView({ block: "nearest", inline: "nearest", behavior: prefersReducedMotion ? "auto" : "smooth" });
+          }
+        }
+      }
+    }
+
+    function renderCalendar(calendarEl, now) {
+      if (!calendarEl) {
+        return;
+      }
+      var today = now || new Date();
+      var year = today.getFullYear();
+      var month = today.getMonth();
+      var firstDay = new Date(year, month, 1);
+      var daysInMonth = new Date(year, month + 1, 0).getDate();
+      var html = '<div class="desktop-calendar-month">' + today.toLocaleDateString([], { month: "long", year: "numeric" }) + '</div>';
+      ["S", "M", "T", "W", "T", "F", "S"].forEach(function (day) {
+        html += '<div class="desktop-calendar-day is-label">' + day + '</div>';
+      });
+      for (var i = 0; i < firstDay.getDay(); i += 1) {
+        html += '<div class="desktop-calendar-day is-empty"></div>';
+      }
+      for (var dayNum = 1; dayNum <= daysInMonth; dayNum += 1) {
+        html += '<div class="desktop-calendar-day' + (dayNum === today.getDate() ? ' is-today' : '') + '">' + dayNum + '</div>';
+      }
+      calendarEl.innerHTML = html;
+    }
+
+    function updateDesktopDateTime() {
+      var now = new Date();
+      var timeText = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      clocks.forEach(function (clock) {
+        clock.textContent = timeText;
+      });
+      if (taskbarClock) taskbarClock.textContent = timeText;
+      dates.forEach(function (date) {
+        date.textContent = now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+      });
+      calendars.forEach(function (calendarEl) {
+        renderCalendar(calendarEl, now);
       });
     }
+
+    desktopShell.addEventListener("click", function (event) {
+      var trigger = event.target && event.target.closest ? event.target.closest("[data-app]") : null;
+      if (trigger) {
+        runDesktopApp(trigger.dataset.app);
+      }
+    });
+
+    if (exitBtn) exitBtn.addEventListener("click", exitDesktop);
+    if (taskbarClock) taskbarClock.addEventListener("click", function () { runDesktopApp("system"); });
+    if (systemClose) {
+      systemClose.addEventListener("click", function () {
+        if (!systemOverlay) return;
+        systemOverlay.classList.remove("is-open");
+        systemOverlay.setAttribute("aria-hidden", "true");
+      });
+    }
+    if (systemOverlay) {
+      systemOverlay.addEventListener("click", function (event) {
+        if (event.target === systemOverlay && systemClose) {
+          systemClose.click();
+        }
+      });
+    }
+    if (settingsOpenFiles) settingsOpenFiles.addEventListener("click", function () { runDesktopApp("files"); });
+    if (settingsOpenNotes) settingsOpenNotes.addEventListener("click", function () { runDesktopApp("notes"); });
+    if (settingsOpenTerminal) settingsOpenTerminal.addEventListener("click", function () { runDesktopApp("terminal"); });
+    if (settingsExitDesktop) settingsExitDesktop.addEventListener("click", exitDesktop);
+    if (compactToggle) {
+      compactToggle.addEventListener("change", function () {
+        desktopShell.classList.toggle("desktop-compact", compactToggle.checked);
+      });
+    }
+    if (widgetToggle) {
+      widgetToggle.addEventListener("change", function () {
+        desktopShell.classList.toggle("desktop-hide-widgets", !widgetToggle.checked);
+      });
+    }
+    if (motionToggle) {
+      motionToggle.addEventListener("change", function () {
+        desktopShell.classList.toggle("desktop-reduced-motion", !motionToggle.checked);
+      });
+    }
+    updateDesktopDateTime();
+    window.setInterval(updateDesktopDateTime, 30000);
   }
 
   function clampValue(value, min, max) {
@@ -560,12 +717,12 @@
   function getRevealObserverConfig() {
     var viewport = getViewportMetrics();
     if (viewport.width <= 540 || viewport.height <= 620) {
-      return { key: "compact", threshold: 0.04, rootMargin: "0px 0px -4% 0px", delayStep: 0.03 };
+      return { key: "compact", threshold: 0.01, rootMargin: "0px 0px 160px 0px", delayStep: 0.02 };
     }
     if (viewport.width <= 960) {
-      return { key: "mobile", threshold: 0.08, rootMargin: "0px 0px -8% 0px", delayStep: 0.035 };
+      return { key: "mobile", threshold: 0.04, rootMargin: "0px 0px 120px 0px", delayStep: 0.03 };
     }
-    return { key: "desktop", threshold: 0.12, rootMargin: "0px 0px -12% 0px", delayStep: 0.04 };
+    return { key: "desktop", threshold: 0.08, rootMargin: "0px 0px 48px 0px", delayStep: 0.04 };
   }
 
   function applyStagger(targets) {
@@ -582,7 +739,7 @@
 
     groups.forEach(function (items) {
       items.forEach(function (element, index) {
-        var delay = Math.min(index, 12) * delayStep;
+        var delay = index * delayStep;
         element.style.animationDelay = delay.toFixed(2) + "s";
       });
     });
@@ -644,9 +801,33 @@
       return;
     }
     targets.forEach(function (element) {
+      if (isElementInViewport(element, 140)) {
+        element.classList.add("is-visible");
+        scrollObserver.unobserve(element);
+        return;
+      }
       element.classList.remove("is-visible");
       scrollObserver.observe(element);
     });
+
+    window.setTimeout(function () {
+      targets.forEach(function (element) {
+        if (!element.classList.contains("is-visible") && isElementInViewport(element, 220)) {
+          element.classList.add("is-visible");
+          scrollObserver.unobserve(element);
+        }
+      });
+    }, 420);
+  }
+
+  function isElementInViewport(element, margin) {
+    if (!element || typeof element.getBoundingClientRect !== "function") {
+      return false;
+    }
+    var rect = element.getBoundingClientRect();
+    var viewport = getViewportMetrics();
+    var extra = Number(margin) || 0;
+    return rect.bottom >= -extra && rect.top <= viewport.height + extra;
   }
 
   function refreshRevealAnimationsForViewport() {
@@ -684,16 +865,15 @@
 
     var isUpdateTab = tabId === "update";
     document.body.classList.toggle("update-theme", isUpdateTab);
-    document.body.classList.add("theme-shift");
     if (themeShiftTimer) {
       window.clearTimeout(themeShiftTimer);
+      themeShiftTimer = null;
     }
-    themeShiftTimer = window.setTimeout(function () {
-      document.body.classList.remove("theme-shift");
-    }, 500);
+    document.body.classList.remove("theme-shift");
 
     tabSwitchToken += 1;
     var currentToken = tabSwitchToken;
+    var transitionMs = getTabTransitionDuration();
 
     navLinks.forEach(function (link) {
       link.classList.toggle("active", link.dataset.tab === tabId);
@@ -718,9 +898,7 @@
     }
 
     var contentHost = typeof targetTab.closest === "function" ? targetTab.closest(".content") : null;
-    if (contentHost) {
-      contentHost.style.minHeight = "";
-    }
+    var stableHeight = contentHost ? contentHost.getBoundingClientRect().height : 0;
 
     function clearTabTransitionState(tabContent) {
       if (!tabContent) {
@@ -737,11 +915,18 @@
       tabContent.style.removeProperty("width");
     }
 
-    tabContents.forEach(function (tabContent) {
+    function hideTab(tabContent) {
+      if (!tabContent) {
+        return;
+      }
       clearTabTransitionState(tabContent);
+      tabContent.classList.add("hidden");
+      tabContent.style.display = "none";
+    }
+
+    tabContents.forEach(function (tabContent) {
       if (tabContent !== targetTab) {
-        tabContent.classList.add("hidden");
-        tabContent.style.display = "none";
+        hideTab(tabContent);
       }
     });
 
@@ -761,11 +946,12 @@
       if (contentHost) {
         contentHost.style.minHeight = "";
       }
+      document.body.classList.remove("tab-switching");
     }
 
     resetScrollPosition();
 
-    if (tabTransitionMs === 0) {
+    if (transitionMs === 0) {
       tabContents.forEach(function (tabContent) {
         if (tabContent === targetTab) {
           tabContent.classList.remove("hidden");
@@ -787,10 +973,17 @@
 
     targetTab.classList.remove("hidden");
     targetTab.style.display = "";
-    targetTab.classList.remove("tab-leave");
-    targetTab.classList.remove("tab-layer-leave");
+    clearTabTransitionState(targetTab);
+    targetTab.classList.add("tab-layer-active");
     targetTab.classList.add("tab-enter");
-    targetTab.classList.remove("tab-enter-active");
+
+    if (contentHost) {
+      var targetHeight = targetTab.offsetHeight;
+      contentHost.style.minHeight = Math.max(stableHeight, targetHeight, contentHost.offsetHeight) + "px";
+    }
+
+    document.body.classList.add("tab-switching");
+    void targetTab.offsetWidth;
 
     window.requestAnimationFrame(function () {
       if (currentToken !== tabSwitchToken) {
@@ -805,7 +998,7 @@
         return;
       }
       targetTab.classList.remove("tab-enter-active");
-    }, tabTransitionMs);
+    }, transitionMs);
 
     activeTab = targetTab;
     resetRevealForTab(targetTab);
@@ -815,7 +1008,7 @@
 
     tabCleanupTimer = window.setTimeout(function () {
       finalizeTabVisibility();
-    }, tabTransitionMs);
+    }, transitionMs);
   }
 
   function resolveTabId(tabId) {
@@ -1082,41 +1275,7 @@
       return null;
     }
 
-    var viewSwitchToken = 0;
-    var backBtnAnimTimer = null;
-    var viewRecoveryTimer = null;
-
-    function clearViewState(view) {
-      if (!view) {
-        return;
-      }
-      view.classList.remove("view-enter");
-      view.classList.remove("view-leave");
-      view.classList.remove("view-layer-active");
-      view.classList.remove("view-layer-leave");
-      view.style.removeProperty("top");
-      view.style.removeProperty("left");
-      view.style.removeProperty("right");
-      view.style.removeProperty("width");
-    }
-
-    function clearArticleHostMinHeight() {
-      articleSection.style.minHeight = "";
-    }
-
-    function clearViewRecoveryTimer() {
-      if (!viewRecoveryTimer) {
-        return;
-      }
-      window.clearTimeout(viewRecoveryTimer);
-      viewRecoveryTimer = null;
-    }
-
-    function setDetailCardsOpacity(value) {
-      detailCards.forEach(function (card) {
-        card.style.opacity = value;
-      });
-    }
+    var articleMotionTimer = null;
 
     function restoreArticleListItemsWhenUnfiltered() {
       var articleSearchInput = document.getElementById("articleSearchBox");
@@ -1144,15 +1303,7 @@
       detailCards.forEach(function (card) {
         card.classList.add("hidden");
         card.style.display = "none";
-        card.style.opacity = "0";
       });
-    }
-
-    function isMobileLayoutActive() {
-      if (window.matchMedia) {
-        return window.matchMedia("(max-width: 960px)").matches;
-      }
-      return window.innerWidth <= 960;
     }
 
     function forceRevealVisible(scope) {
@@ -1169,35 +1320,25 @@
       });
     }
 
-    function recoverViewVisibility(view, delayMs) {
-      clearViewRecoveryTimer();
-      var waitMs = Math.max(0, Number(delayMs) || 0);
-      viewRecoveryTimer = window.setTimeout(function () {
-        viewRecoveryTimer = null;
-        forceRevealVisible(view);
-        if (isMobileLayoutActive()) {
-          resetScrollPosition();
-        }
-      }, waitMs);
-    }
-
-    function clearBackButtonFadeClasses() {
+    function clearArticleMotion() {
+      if (articleMotionTimer) {
+        window.clearTimeout(articleMotionTimer);
+        articleMotionTimer = null;
+      }
+      listView.classList.remove("view-enter", "view-leave", "view-layer-active", "view-layer-leave");
+      detailView.classList.remove("view-enter", "view-leave", "view-layer-active", "view-layer-leave");
       if (!backBtn) {
         return;
       }
       backBtn.classList.remove("is-fading-in");
       backBtn.classList.remove("is-fading-out");
-      if (backBtnAnimTimer) {
-        window.clearTimeout(backBtnAnimTimer);
-        backBtnAnimTimer = null;
-      }
     }
 
     function runBackButtonFade(type) {
       if (!backBtn || articleViewTransitionMs === 0) {
         return;
       }
-      clearBackButtonFadeClasses();
+      backBtn.classList.remove("is-fading-in", "is-fading-out");
       if (type === "in") {
         backBtn.classList.add("is-fading-in");
       } else if (type === "out") {
@@ -1205,7 +1346,7 @@
       } else {
         return;
       }
-      backBtnAnimTimer = window.setTimeout(function () {
+      window.setTimeout(function () {
         if (!backBtn) {
           return;
         }
@@ -1214,85 +1355,10 @@
       }, articleViewTransitionMs);
     }
 
-    function transitionViews(fromView, toView, options) {
-      if (!fromView || !toView || fromView === toView) {
-        return;
-      }
-      options = options || {};
-      var onComplete = typeof options.onComplete === "function" ? options.onComplete : null;
-      clearArticleHostMinHeight();
-      if (articleViewTransitionMs === 0) {
-        clearViewState(fromView);
-        clearViewState(toView);
-        fromView.classList.add("hidden");
-        fromView.style.display = "none";
-        toView.classList.remove("hidden");
-        toView.style.display = "";
-        clearBackButtonFadeClasses();
-        clearArticleHostMinHeight();
-        if (onComplete) {
-          onComplete();
-        }
-        return;
-      }
-
-      viewSwitchToken += 1;
-      var currentToken = viewSwitchToken;
-
-      clearViewState(fromView);
-      clearViewState(toView);
-
-      toView.classList.remove("hidden");
-      toView.style.display = "";
-      toView.classList.add("view-layer-active");
-
-      var hostRect = articleSection.getBoundingClientRect();
-      var fromRect = fromView.getBoundingClientRect();
-      var toRect = toView.getBoundingClientRect();
-      var fromTop = hostRect ? (fromRect.top - hostRect.top) : fromView.offsetTop;
-      var fromLeft = hostRect ? (fromRect.left - hostRect.left) : fromView.offsetLeft;
-
-      if (fromRect.width > 0) {
-        fromView.style.top = fromTop + "px";
-        fromView.style.left = fromLeft + "px";
-        fromView.style.width = fromRect.width + "px";
-        fromView.style.right = "auto";
-      }
-      fromView.classList.add("view-layer-leave");
-
-      var hostHeight = Math.max(fromRect.height, toRect.height);
-      if (hostHeight > 0) {
-        articleSection.style.minHeight = Math.ceil(hostHeight) + "px";
-      }
-
-      toView.classList.add("view-enter");
-      fromView.classList.add("view-leave");
-      if (toView === detailView) {
-        runBackButtonFade("in");
-      } else if (fromView === detailView) {
-        runBackButtonFade("out");
-      }
-
-      window.requestAnimationFrame(function () {
-        if (currentToken !== viewSwitchToken) {
-          return;
-        }
-        toView.classList.remove("view-enter");
-      });
-
-      window.setTimeout(function () {
-        if (currentToken !== viewSwitchToken) {
-          return;
-        }
-        fromView.classList.add("hidden");
-        fromView.style.display = "none";
-        clearViewState(fromView);
-        clearViewState(toView);
-        clearArticleHostMinHeight();
-        if (onComplete) {
-          onComplete();
-        }
-      }, articleViewTransitionMs);
+    function scrollArticleTop() {
+      var headerOffset = 92;
+      var targetTop = articleSection.getBoundingClientRect().top + window.pageYOffset - headerOffset;
+      window.scrollTo({ top: Math.max(0, targetTop), behavior: prefersReducedMotion ? "auto" : "smooth" });
     }
 
     function showArticleCard(targetId) {
@@ -1300,54 +1366,47 @@
         var isTarget = card.id === targetId;
         card.classList.toggle("hidden", !isTarget);
         card.style.display = isTarget ? "" : "none";
-        card.style.opacity = isTarget ? "1" : "0";
       });
     }
 
     function showList(forceImmediate) {
-      if (forceImmediate || articleViewTransitionMs === 0 || detailView.classList.contains("hidden") || isMobileLayoutActive()) {
-        hideAllDetailCards();
-        clearViewState(listView);
-        clearViewState(detailView);
-        listView.classList.remove("hidden");
-        listView.style.display = "";
-        detailView.classList.add("hidden");
-        detailView.style.display = "none";
-        clearBackButtonFadeClasses();
-        clearArticleHostMinHeight();
-        restoreArticleListItemsWhenUnfiltered();
-        recoverViewVisibility(listView, 0);
-        return;
+      clearArticleMotion();
+      hideAllDetailCards();
+      detailView.classList.add("hidden");
+      detailView.style.display = "none";
+      listView.classList.remove("hidden");
+      listView.style.display = "";
+      restoreArticleListItemsWhenUnfiltered();
+      forceRevealVisible(listView);
+      runBackButtonFade("out");
+      if (!forceImmediate && articleViewTransitionMs > 0) {
+        listView.classList.add("view-enter");
+        window.requestAnimationFrame(function () {
+          listView.classList.remove("view-enter");
+        });
       }
-
-      setDetailCardsOpacity("0");
-      transitionViews(detailView, listView, {
-        onComplete: function () {
-          hideAllDetailCards();
-          restoreArticleListItemsWhenUnfiltered();
-        }
-      });
-      recoverViewVisibility(listView, articleViewTransitionMs);
+      scrollArticleTop();
     }
 
     function openArticle(targetId) {
       if (!targetId || !document.getElementById(targetId)) {
         return;
       }
-      setDetailCardsOpacity("1");
+      clearArticleMotion();
       showArticleCard(targetId);
-      if (listView.classList.contains("hidden") || articleViewTransitionMs === 0) {
-        listView.classList.add("hidden");
-        listView.style.display = "none";
-        detailView.classList.remove("hidden");
-        detailView.style.display = "";
-        runBackButtonFade("in");
-        clearArticleHostMinHeight();
-        recoverViewVisibility(detailView, 0);
-        return;
+      listView.classList.add("hidden");
+      listView.style.display = "none";
+      detailView.classList.remove("hidden");
+      detailView.style.display = "";
+      forceRevealVisible(detailView);
+      runBackButtonFade("in");
+      if (articleViewTransitionMs > 0) {
+        detailView.classList.add("view-enter");
+        window.requestAnimationFrame(function () {
+          detailView.classList.remove("view-enter");
+        });
       }
-      transitionViews(listView, detailView);
-      recoverViewVisibility(detailView, articleViewTransitionMs);
+      scrollArticleTop();
     }
 
     openButtons.forEach(function (btn) {
@@ -2859,6 +2918,235 @@
     });
   }
 
+  function ensureTerminalUpgradeOverlay() {
+    var overlay = document.getElementById("terminalUpgradeOverlay");
+    if (overlay) {
+      return overlay;
+    }
+    overlay = document.createElement("div");
+    overlay.id = "terminalUpgradeOverlay";
+    overlay.className = "terminal-upgrade-overlay";
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.innerHTML =
+      '<div class="terminal-upgrade-panel">' +
+        '<div class="terminal-upgrade-text" id="terminalUpgradeText">entering terminal</div>' +
+        '<button class="terminal-upgrade-button hidden" id="terminalUpgradeButton" type="button">Update</button>' +
+        '<div class="terminal-upgrade-progress hidden" id="terminalUpgradeProgress">' +
+          '<div class="terminal-upgrade-status" id="terminalUpgradeStatus">Preparing update</div>' +
+          '<div class="terminal-upgrade-bar"><span id="terminalUpgradeBar"></span></div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  function setWebsiteUpgraded(isUpgraded) {
+    document.body.classList.toggle("arch-upgraded", isUpgraded);
+    try {
+      window.localStorage.setItem("archWebsiteUpgraded", isUpgraded ? "true" : "false");
+    } catch (error) {
+    }
+  }
+
+  function applyStoredWebsiteUpgrade() {
+    try {
+      setWebsiteUpgraded(window.localStorage.getItem("archWebsiteUpgraded") === "true");
+    } catch (error) {
+      setWebsiteUpgraded(false);
+    }
+  }
+
+  function playWebsiteUpgradeIntro() {
+    if (prefersReducedMotion) {
+      return;
+    }
+    document.body.classList.remove("arch-upgrade-intro");
+    void document.body.offsetWidth;
+    document.body.classList.add("arch-upgrade-intro");
+    window.setTimeout(function () {
+      document.body.classList.remove("arch-upgrade-intro");
+    }, 980);
+  }
+
+  function isUpdateReminderDisabled() {
+    try {
+      return window.localStorage.getItem(UPDATE_REMINDER_DISABLED_KEY) === "true";
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function setUpdateReminderDisabled(isDisabled) {
+    try {
+      if (isDisabled) {
+        window.localStorage.setItem(UPDATE_REMINDER_DISABLED_KEY, "true");
+      } else {
+        window.localStorage.removeItem(UPDATE_REMINDER_DISABLED_KEY);
+      }
+    } catch (error) {
+    }
+  }
+
+  function ensureUpdateReminderOverlay() {
+    var overlay = document.getElementById("updateReminderOverlay");
+    if (overlay) {
+      return overlay;
+    }
+    overlay = document.createElement("div");
+    overlay.id = "updateReminderOverlay";
+    overlay.className = "update-reminder-overlay";
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.innerHTML =
+      '<div class="update-reminder-panel" role="dialog" aria-labelledby="updateReminderTitle">' +
+        '<div class="update-reminder-title" id="updateReminderTitle">There is an update available</div>' +
+        '<div class="update-reminder-actions">' +
+          '<button class="update-reminder-btn update-now" id="updateReminderNow" type="button">Update Now</button>' +
+          '<button class="update-reminder-btn later" id="updateReminderLater" type="button">Later</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  function closeUpdateReminderOverlay() {
+    var overlay = document.getElementById("updateReminderOverlay");
+    if (!overlay) {
+      return;
+    }
+    overlay.classList.remove("is-open");
+    overlay.classList.add("is-closing");
+    overlay.setAttribute("aria-hidden", "true");
+    window.setTimeout(function () {
+      overlay.classList.remove("is-closing");
+    }, prefersReducedMotion ? 0 : 260);
+  }
+
+  function showUpdateReminderIfNeeded() {
+    if (document.body.classList.contains("arch-upgraded") || isUpdateReminderDisabled()) {
+      return;
+    }
+    try {
+      if (window.sessionStorage.getItem(UPDATE_REMINDER_SESSION_KEY) === "true") {
+        return;
+      }
+    } catch (error) {
+    }
+
+    var overlay = ensureUpdateReminderOverlay();
+    var updateNow = overlay.querySelector("#updateReminderNow");
+    var later = overlay.querySelector("#updateReminderLater");
+
+    if (updateNow) {
+      updateNow.onclick = function () {
+        setWebsiteUpgraded(true);
+        closeUpdateReminderOverlay();
+        playWebsiteUpgradeIntro();
+        notifySnackbar("Website upgraded.");
+      };
+    }
+    if (later) {
+      later.onclick = function () {
+        try {
+          window.sessionStorage.setItem(UPDATE_REMINDER_SESSION_KEY, "true");
+        } catch (error) {
+        }
+        closeUpdateReminderOverlay();
+      };
+    }
+
+    overlay.classList.remove("is-closing");
+    void overlay.offsetWidth;
+    overlay.classList.add("is-open");
+    overlay.setAttribute("aria-hidden", "false");
+  }
+
+  function startTerminalUpgradeFlow() {
+    var overlay = ensureTerminalUpgradeOverlay();
+    var text = overlay.querySelector("#terminalUpgradeText");
+    var button = overlay.querySelector("#terminalUpgradeButton");
+    var progress = overlay.querySelector("#terminalUpgradeProgress");
+    var status = overlay.querySelector("#terminalUpgradeStatus");
+    var bar = overlay.querySelector("#terminalUpgradeBar");
+    var countdownTimer = null;
+    var promptTimer = null;
+
+    function closeOverlay(afterClose) {
+      if (countdownTimer) {
+        window.clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+      if (promptTimer) {
+        window.clearTimeout(promptTimer);
+        promptTimer = null;
+      }
+      overlay.classList.add("is-closing");
+      overlay.classList.remove("is-open");
+      overlay.setAttribute("aria-hidden", "true");
+      window.setTimeout(function () {
+        overlay.classList.remove("is-closing", "is-updating", "is-ready");
+        if (typeof afterClose === "function") {
+          afterClose();
+        }
+      }, prefersReducedMotion ? 0 : 460);
+    }
+
+    overlay.classList.remove("is-closing");
+    void overlay.offsetWidth;
+    overlay.classList.add("is-open");
+    overlay.setAttribute("aria-hidden", "false");
+    overlay.classList.remove("is-updating", "is-ready");
+    if (text) text.textContent = "entering terminal";
+    if (button) {
+      button.textContent = "Update";
+      button.classList.add("hidden");
+      button.onclick = null;
+    }
+    if (progress) progress.classList.add("hidden");
+    if (bar) bar.style.width = "0%";
+
+    promptTimer = window.setTimeout(function () {
+      promptTimer = null;
+      if (text) text.textContent = "you need to have an update to proceed";
+      if (button) {
+        button.classList.remove("hidden");
+        button.onclick = function () {
+          var remaining = 10;
+          button.classList.add("hidden");
+          overlay.classList.add("is-updating");
+          if (progress) progress.classList.remove("hidden");
+          if (status) status.textContent = "Updating... " + remaining + "s";
+          if (bar) bar.style.width = "0%";
+          countdownTimer = window.setInterval(function () {
+            remaining -= 1;
+            var percent = Math.max(0, Math.min(100, ((10 - remaining) / 10) * 100));
+            if (bar) bar.style.width = percent + "%";
+            if (status) status.textContent = "Updating... " + Math.max(0, remaining) + "s";
+            if (remaining <= 0) {
+              window.clearInterval(countdownTimer);
+              countdownTimer = null;
+              overlay.classList.remove("is-updating");
+              overlay.classList.add("is-ready");
+              if (text) text.textContent = "Update complete";
+              if (status) status.textContent = "Ready to proceed";
+              if (bar) bar.style.width = "100%";
+              if (button) {
+                button.textContent = "Proceed";
+                button.classList.remove("hidden");
+                button.onclick = function () {
+                  setWebsiteUpgraded(true);
+                  closeOverlay(function () {
+                    playWebsiteUpgradeIntro();
+                    notifySnackbar("Website upgraded. Type downgrade in Terminal to restore the old design.");
+                  });
+                };
+              }
+            }
+          }, 1000);
+        };
+      }
+    }, 1500);
+  }
+
   function setupTerminalCommands() {
     var terminalSection = document.getElementById("terminal");
     if (!terminalSection) {
@@ -2886,11 +3174,19 @@
     }
 
     function renderHelp(targetOutput) {
-      renderOutput(targetOutput, "Commands", [
+      var commands = [
         "/help - Show general command list",
-        "ent terminal -i - Enter terminal",
-        "/remove rem-rest -f user - Enable desktop access"
-      ]);
+        "ent terminal -i - Enter terminal update",
+        "clear localstorage - Clear saved website data",
+        "force mobile ui - Force mobile layout",
+        "force pc ui - Force PC layout",
+        "reset ui - Restore responsive layout",
+        "terminate update reminders - Disable update popup"
+      ];
+      if (document.body.classList.contains("arch-upgraded")) {
+        commands.push("downgrade - Restore old website design");
+      }
+      renderOutput(targetOutput, "Commands", commands);
     }
 
     function renderInfo(targetOutput, message) {
@@ -2907,18 +3203,53 @@
         renderHelp(targetOutput);
         return;
       }
-      if (normalized === "ent terminal -i" || normalized === "enter terminal -i") {
-        renderInfo(targetOutput, "Terminal mode is coming soon.");
+      if (normalized === "clear localstorage" || normalized === "clear local storage" || normalized === "clear storage") {
+        try {
+          window.localStorage.clear();
+          window.sessionStorage.removeItem(UPDATE_REMINDER_SESSION_KEY);
+        } catch (error) {
+        }
+        document.body.classList.remove("arch-upgraded", "arch-upgrade-intro", "force-mobile-ui", "force-pc-ui");
+        renderInfo(targetOutput, "LocalStorage cleared. Reload the page for a fully clean boot.");
         return;
       }
-      if (normalized === "/remove rem-rest -f user") {
-        if (desktopUnlocked) {
-          renderInfo(targetOutput, "Desktop access is already enabled.");
+      if (normalized === "force mobile ui" || normalized === "force mobile" || normalized === "mobile ui") {
+        applyForcedUiMode("mobile");
+        renderInfo(targetOutput, "Mobile UI forced. Type reset ui to restore responsive mode.");
+        return;
+      }
+      if (normalized === "force pc ui" || normalized === "force desktop ui" || normalized === "force pc" || normalized === "pc ui" || normalized === "desktop ui") {
+        applyForcedUiMode("pc");
+        renderInfo(targetOutput, "PC UI forced. Type reset ui to restore responsive mode.");
+        return;
+      }
+      if (normalized === "reset ui" || normalized === "auto ui" || normalized === "responsive ui") {
+        applyForcedUiMode("");
+        renderInfo(targetOutput, "Responsive UI restored.");
+        return;
+      }
+      if (normalized === "terminate update reminders" || normalized === "disable update reminders" || normalized === "terminate update reminder") {
+        setUpdateReminderDisabled(true);
+        closeUpdateReminderOverlay();
+        renderInfo(targetOutput, "Update reminders disabled.");
+        return;
+      }
+      if (normalized === "ent terminal -i" || normalized === "enter terminal -i") {
+        if (document.body.classList.contains("arch-upgraded")) {
+          renderInfo(targetOutput, "Terminal update is already installed. Type downgrade to restore the old design.");
           return;
         }
-        desktopArmed = true;
-        desktopClickCount = 0;
-        renderInfo(targetOutput, "Desktop access armed. Click Download Archive title five times.");
+        renderInfo(targetOutput, "Opening terminal update.");
+        startTerminalUpgradeFlow();
+        return;
+      }
+      if (normalized === "downgrade" || normalized === "downgrade -i" || normalized === "terminal downgrade") {
+        if (!document.body.classList.contains("arch-upgraded")) {
+          renderInfo(targetOutput, "Old website design is already active.");
+          return;
+        }
+        setWebsiteUpgraded(false);
+        renderInfo(targetOutput, "Downgrade complete. Old website design restored.");
         return;
       }
       notifySnackbar("Unknown Command");
@@ -2959,8 +3290,6 @@
     var mobileLauncherRun = document.getElementById("terminalLauncherMobileRun");
     var mobileLauncherClose = document.getElementById("terminalLauncherMobileClose");
     var mobileLauncherOutput = document.getElementById("terminalLauncherMobileOutput");
-    var mobileTerminalFab = document.getElementById("mobileTerminalFab");
-
     var contextItems = {
       cut: contextMenu.querySelector('[data-action="cut"]'),
       copy: contextMenu.querySelector('[data-action="copy"]'),
@@ -2986,10 +3315,15 @@
       canCopy: false,
       canPaste: false
     };
-    var mobileFabPrimed = false;
-    var mobileFabIntroTimer = null;
 
     function isMobileViewport() {
+      var forcedMode = getForcedUiMode();
+      if (forcedMode === "mobile") {
+        return true;
+      }
+      if (forcedMode === "pc") {
+        return false;
+      }
       if (window.matchMedia) {
         return window.matchMedia("(max-width: 960px)").matches;
       }
@@ -3123,23 +3457,6 @@
       mobileLauncher.setAttribute("aria-hidden", "true");
     }
 
-    function showMobileFabIntro() {
-      if (!mobileTerminalFab) {
-        return;
-      }
-      mobileTerminalFab.classList.remove("is-visible");
-      mobileTerminalFab.classList.remove("is-armed");
-      mobileFabPrimed = false;
-      if (mobileFabIntroTimer) {
-        window.clearTimeout(mobileFabIntroTimer);
-        mobileFabIntroTimer = null;
-      }
-      mobileFabIntroTimer = window.setTimeout(function () {
-        mobileFabIntroTimer = null;
-        mobileTerminalFab.classList.add("is-visible");
-      }, 3200);
-    }
-
     function openMobileLauncher() {
       if (!mobileLauncher) {
         return;
@@ -3162,6 +3479,8 @@
       closeMobileLauncher();
       openDesktopLauncher();
     }
+
+    window.openArchTerminalLauncher = openTerminalLauncher;
 
     function tryExecCommand(command) {
       try {
@@ -3378,21 +3697,6 @@
       mobileLauncherClose.addEventListener("click", closeMobileLauncher);
     }
 
-    if (mobileTerminalFab) {
-      showMobileFabIntro();
-      mobileTerminalFab.addEventListener("click", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        hideContextMenu();
-        if (!mobileFabPrimed) {
-          mobileFabPrimed = true;
-          mobileTerminalFab.classList.add("is-visible");
-          mobileTerminalFab.classList.add("is-armed");
-          return;
-        }
-        openTerminalLauncher();
-      });
-    }
   }
 
   function applyDarkTheme() {
@@ -3402,6 +3706,7 @@
     }
   }
 
+  applyStoredUiMode();
   setupResourceSearch();
   articleViewController = setupArticleView();
   setupMathCalculator();
@@ -3428,6 +3733,7 @@
   window.addEventListener("resize", scheduleRevealRefresh);
   window.addEventListener("orientationchange", scheduleRevealRefresh);
   setupScrollAnimations();
+  applyStoredWebsiteUpgrade();
 
   var initialTabId = getInitialTabId();
   if (initialTabId) {
@@ -3436,4 +3742,5 @@
   applyDarkTheme();
   syncAllServerStates();
   watchServerStateDotChanges();
+  window.setTimeout(showUpdateReminderIfNeeded, prefersReducedMotion ? 120 : 760);
 })();
