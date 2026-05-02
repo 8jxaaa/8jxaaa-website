@@ -160,7 +160,8 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      height: 100dvh;
+      background: transparent;
       z-index: 40;
       opacity: 0;
       pointer-events: none;
@@ -176,26 +177,15 @@
       pointer-events: auto;
     }
     #desktopArea {
-      padding: 24px;
       width: 100%;
       height: 100%;
       box-sizing: border-box;
     }
     #desktopAppsGrid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-      gap: 20px;
-      align-content: start;
     }
     .os-app-icon {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
       color: #fff;
-      transition: background 0.2s;
-    }
-    .os-app-icon:hover {
-      background: rgba(255, 255, 255, 0.15);
     }
   </style>
 </head>
@@ -724,7 +714,7 @@
           <p class="config-line float-appear"><span class="config-key">System Channel:</span> Public Stable</p>
           <p class="config-line float-appear"><span class="config-key">System Status:</span> Working</p>
           <p class="config-line float-appear"><span class="config-key">Server Status:</span> Working</p>
-          <p class="config-line float-appear"><span class="config-key">Website Version:</span> 3.9.2</p>
+          <p class="config-line float-appear"><span class="config-key">Website Version:</span> 3.10.0</p>
           <p class="config-line float-appear"><span class="config-key">Terminal Version:</span> 1.0</p>
           <p class="config-line float-appear"><span class="config-key">BIOS Version:</span> 1.0</p>
           <p class="config-line float-appear"><span class="config-key">Mobile Support:</span> Yes</p>
@@ -741,109 +731,125 @@
 
 
       <!-- UPDATE -->
-<section id="update" class="tab-content hidden">
-  <div class="update-page">
-    <div class="scroll-hint float-appear float-loop">More content below</div>
-    <div class="update-header">
-      <!-- <div class="text-2">Release Notes</div> -->
-      <!-- <p class="text">Open a version to see full notes. Latest updates stay at the top.</p> -->
-      <div class="update-filter-bar">
-        <div class="update-filter-label">Filter by tag</div>
-        <div class="update-filter-list">
-          <button class="update-pill update-pill-orange update-filter" type="button" data-tag="new-release" aria-pressed="false">New Release</button>
-          <button class="update-pill update-pill-blue update-filter" type="button" data-tag="private-beta" aria-pressed="false">Private Beta</button>
-        </div>
-      </div>
-    </div>
-    <div class="update-accordion">
-      <details class="update-item" open data-tag="new-release">
-        <summary>
-          <div class="update-title">
-            <span class="update-version">v3.9.2 (Build 2613)</span>
-            <span class="update-subtitle update-pill update-pill-orange">New Release</span>
+      <section id="update" class="tab-content hidden">
+        <div class="update-page">
+          <div class="scroll-hint float-appear float-loop">More content below</div>
+          <div class="update-header">
+            <!-- <div class="text-2">Release Notes</div> -->
+            <!-- <p class="text">Open a version to see full notes. Latest updates stay at the top.</p> -->
+            <div class="update-filter-bar">
+              <div class="update-filter-label">Filter by tag</div>
+              <div class="update-filter-list">
+                <button class="update-pill update-pill-orange update-filter" type="button" data-tag="new-release" aria-pressed="false">New Release</button>
+                <button class="update-pill update-pill-blue update-filter" type="button" data-tag="private-beta" aria-pressed="false">Private Beta</button>
+              </div>
+            </div>
           </div>
-        </summary>
-        <div class="update-body">
-          <p class="text-2-para">- Improved animation: Now the animation will trigger based on the size of screen</p>
-          <p class="text-2-para">- Improved Mobile UI Design</p>
-          <p class="text-2-para">- (Mobile) Added terminal option at bottom-right corner</p>
-          <p class="text-2-para">- (PC) Added custom right click menu</p>
-        </div>
-      </details>
+          <div class="update-accordion">
+            <details class="update-item" open data-tag="new-release">
+              <summary>
+                <div class="update-title">
+                  <span class="update-version">v3.10.0 (Build 3000 \ 2026-5-1)</span>
+                  <span class="update-subtitle update-pill update-pill-orange">New Release</span>
+                </div>
+              </summary>
+              <div class="update-body">
+                <p class="text-2-para">- Fixed animation: Option not showing</p>
+                <p class="text-2-para">- Improved Mobile UI interactive</p>
+                <p class="text-2-para">- Redo code arrangement, to make it respond faster</p>
+              </div>
+            </details>
 
-      <details class="update-item" data-tag="private-beta">
-        <summary>
-          <div class="update-title">
-            <span class="update-version">v 4.2.3 (Build 18204)</span>
-            <span class="update-subtitle update-pill update-pill-blue">Private Beta</span>
+            <details class="update-item" data-tag="new-release">
+              <summary>
+                <div class="update-title">
+                  <span class="update-version">v3.9.2 (Build 2613)</span>
+                </div>
+              </summary>
+              <div class="update-body">
+                <p class="text-2-para">- Improved animation: Now the animation will trigger based on the size of screen</p>
+                <p class="text-2-para">- Improved Mobile UI Design</p>
+                <p class="text-2-para">- (Mobile) Added terminal option at bottom-right corner</p>
+                <p class="text-2-para">- (PC) Added custom right click menu</p>
+              </div>
+            </details>
+
+            <details class="update-item" data-tag="new-release">
+              <summary>
+                <div class="update-title">
+                  <span class="update-version">v3.8.2 (Build 2502)</span>
+                </div>
+              </summary>
+              <div class="update-body">
+                <p class="text-2-para">- Improved mobile UI</p>
+              </div>
+            </details>
+
+            <details class="update-item"  data-tag="">
+              <summary>
+                <div class="update-title">
+                  <span class="update-version">v3 (Build 2309)</span>
+                </div>
+              </summary>
+              <div class="update-body">
+                <p class="text-2-para">- Removed custom cursor</p>
+                <p class="text-2-para">- Removed the backslash symbol</p>
+                <p class="text-2-para">- Fixed update card background color issue</p>
+                <p class="text-2-para">- Updated update labels for clarity</p>
+                <p class="text-2-para">- Adjusted the update title size</p>
+              </div>
+            </details>
+
+            <hr>
+
+            
+
+            <details class="update-item" data-tag="private-beta">
+              <summary>
+                <div class="update-title">
+                  <span class="update-version">v 4.2.3 (Build 18204)</span>
+                  <span class="update-subtitle update-pill update-pill-blue">Private Beta</span>
+                </div>
+              </summary>
+              <div class="update-body">
+                <p class="text-2-para">- Added more filter tag</p>
+                <p class="text-2-para">- Improved code structure</p>
+              </div>
+            </details>
+
+            
+
+            <details class="update-item" data-tag="private-beta">
+              <summary>
+                <div class="update-title">
+                  <span class="update-version">v 4.2.2 (Build 18200)</span>
+                  <span class="update-subtitle update-pill update-pill-blue">Private Beta</span>
+                </div>
+              </summary>
+              <div class="update-body">
+                <p class="text-2-para">- Added a custom cursor (PC only)</p>
+                <p class="text-2-para">- Optimized code layout for stability</p>
+              </div>
+            </details>
+
+            <details class="update-item" data-tag="private-beta">
+              <summary>
+                <div class="update-title">
+                  <span class="update-version">v 4.2.1 (Build 15634)</span>
+                  <span class="update-subtitle update-pill update-pill-blue">Private Beta</span>
+                </div>
+              </summary>
+              <div class="update-body">
+                <p class="text-2-para">- Updated grammar issues</p>
+                <p class="text-2-para">- Optimized responsive design</p>
+                <p class="text-2-para">- Fixed update label overlap</p>
+                <p class="text-2-para">- Font size adapts to device</p>
+                <p class="text-2-para">- Responsive design now Phase 2</p>
+              </div>
+            </details>
           </div>
-        </summary>
-        <div class="update-body">
-          <p class="text-2-para">- Added more filter tag</p>
-          <p class="text-2-para">- Improved code structure</p>
         </div>
-      </details>
-
-      <hr>
-
-      <details class="update-item" data-tag="new-release">
-        <summary>
-          <div class="update-title">
-            <span class="update-version">v3.8.2 (Build 2502)</span>
-            <span class="update-subtitle update-pill update-pill-orange">New Release</span>
-          </div>
-        </summary>
-        <div class="update-body">
-          <p class="text-2-para">- Improved mobile UI</p>
-        </div>
-      </details>
-
-      <details class="update-item"  data-tag="">
-        <summary>
-          <div class="update-title">
-            <span class="update-version">v3 (Build 2309)</span>
-          </div>
-        </summary>
-        <div class="update-body">
-          <p class="text-2-para">- Removed custom cursor</p>
-          <p class="text-2-para">- Removed the backslash symbol</p>
-          <p class="text-2-para">- Fixed update card background color issue</p>
-          <p class="text-2-para">- Updated update labels for clarity</p>
-          <p class="text-2-para">- Adjusted the update title size</p>
-        </div>
-      </details>
-
-      <details class="update-item" data-tag="private-beta">
-        <summary>
-          <div class="update-title">
-            <span class="update-version">v 4.2.2 (Build 18200)</span>
-            <span class="update-subtitle update-pill update-pill-blue">Private Beta</span>
-          </div>
-        </summary>
-        <div class="update-body">
-          <p class="text-2-para">- Added a custom cursor (PC only)</p>
-          <p class="text-2-para">- Optimized code layout for stability</p>
-        </div>
-      </details>
-
-      <details class="update-item" data-tag="private-beta">
-        <summary>
-          <div class="update-title">
-            <span class="update-version">v 4.2.1 (Build 15634)</span>
-            <span class="update-subtitle update-pill update-pill-blue">Private Beta</span>
-          </div>
-        </summary>
-        <div class="update-body">
-          <p class="text-2-para">- Updated grammar issues</p>
-          <p class="text-2-para">- Optimized responsive design</p>
-          <p class="text-2-para">- Fixed update label overlap</p>
-          <p class="text-2-para">- Font size adapts to device</p>
-          <p class="text-2-para">- Responsive design now Phase 2</p>
-        </div>
-      </details>
-    </div>
-  </div>
-</section>
+      </section>
 
       <!-- TERMINAL -->
       <section id="terminal" class="tab-content hidden">
@@ -862,24 +868,92 @@
 
   <div id="desktopShell" class="desktop-shell" aria-hidden="true">
     <div id="desktopArea">
-      <div id="desktopAppsGrid" aria-label="Desktop apps">
-        <button class="os-app-icon" type="button" data-app="settings">
-          <div class="app-icon-letter">S</div>
-          <div class="app-name">Settings</div>
-        </button>
-        <button class="os-app-icon" type="button" data-app="download">
-          <div class="app-icon-letter">D</div>
-          <div class="app-name">Download Archive</div>
-        </button>
-        <button class="os-app-icon" type="button" data-app="files">
-          <div class="app-icon-letter">F</div>
-          <div class="app-name">Files</div>
-        </button>
-        <button class="os-app-icon" type="button" data-app="notes">
-          <div class="app-icon-letter">N</div>
-          <div class="app-name">Quick Notes</div>
-        </button>
+      <div class="desktop-statusbar">
+        <div class="desktop-brand">ArchOS Desktop</div>
+        <div class="desktop-status-items">
+          <span id="desktopWifiStatus">Wi-Fi Ready</span>
+          <span id="desktopBatteryStatus">100%</span>
+          <button id="desktopExitBtn" class="desktop-status-btn" type="button">Exit</button>
+        </div>
       </div>
+
+      <div class="desktop-workspace">
+        <div id="desktopAppsGrid" class="desktop-icons" aria-label="Desktop apps">
+          <button class="os-app-icon" type="button" data-app="settings">
+            <div class="app-icon-letter">S</div>
+            <div class="app-name">Settings</div>
+          </button>
+          <button class="os-app-icon" type="button" data-app="download">
+            <div class="app-icon-letter">A</div>
+            <div class="app-name">Archive</div>
+          </button>
+          <button class="os-app-icon" type="button" data-app="files">
+            <div class="app-icon-letter">F</div>
+            <div class="app-name">Files</div>
+          </button>
+          <button class="os-app-icon" type="button" data-app="notes">
+            <div class="app-icon-letter">N</div>
+            <div class="app-name">Quick Notes</div>
+          </button>
+          <button class="os-app-icon" type="button" data-app="terminal">
+            <div class="app-icon-letter">T</div>
+            <div class="app-name">Terminal</div>
+          </button>
+          <button class="os-app-icon" type="button" data-app="system">
+            <div class="app-icon-letter">Y</div>
+            <div class="app-name">System</div>
+          </button>
+        </div>
+
+        <aside id="desktopWidgets" class="desktop-widgets" aria-label="Desktop system widgets">
+          <section class="desktop-widget desktop-clock-widget">
+            <div id="desktopClock" class="desktop-clock" data-desktop-clock>--:--</div>
+            <div id="desktopDate" class="desktop-date" data-desktop-date>Loading date</div>
+          </section>
+          <section class="desktop-widget desktop-calendar-widget">
+            <div class="desktop-widget-title">Calendar</div>
+            <div id="desktopCalendar" class="desktop-calendar-grid" data-desktop-calendar aria-live="polite"></div>
+          </section>
+          <section class="desktop-widget">
+            <div class="desktop-widget-title">System</div>
+            <div class="desktop-stat-row"><span>Mode</span><strong>Public beta</strong></div>
+            <div class="desktop-stat-row"><span>Storage</span><strong>Local</strong></div>
+            <div class="desktop-stat-row"><span>Status</span><strong>Stable</strong></div>
+          </section>
+        </aside>
+      </div>
+
+      <div class="desktop-taskbar" role="toolbar" aria-label="Desktop taskbar">
+        <button class="desktop-start-btn" type="button" data-app="settings">Start</button>
+        <div class="desktop-dock">
+          <button class="desktop-dock-btn" type="button" data-app="download">Archive</button>
+          <button class="desktop-dock-btn" type="button" data-app="files">Files</button>
+          <button class="desktop-dock-btn" type="button" data-app="notes">Notes</button>
+          <button class="desktop-dock-btn" type="button" data-app="terminal">Terminal</button>
+          <button class="desktop-dock-btn" type="button" data-app="system">System</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="systemAppOverlay" class="system-app-overlay" aria-hidden="true">
+    <button id="systemAppClose" class="system-app-close" type="button" aria-label="Close system app">&times;</button>
+    <div class="system-app-panel" role="dialog" aria-labelledby="systemAppTitle">
+      <div class="system-app-title" id="systemAppTitle">System</div>
+      <section class="desktop-widget desktop-clock-widget">
+        <div id="systemClock" class="desktop-clock" data-desktop-clock>--:--</div>
+        <div id="systemDate" class="desktop-date" data-desktop-date>Loading date</div>
+      </section>
+      <section class="desktop-widget desktop-calendar-widget">
+        <div class="desktop-widget-title">Calendar</div>
+        <div id="systemCalendar" class="desktop-calendar-grid" data-desktop-calendar aria-live="polite"></div>
+      </section>
+      <section class="desktop-widget">
+        <div class="desktop-widget-title">System</div>
+        <div class="desktop-stat-row"><span>Mode</span><strong>Public beta</strong></div>
+        <div class="desktop-stat-row"><span>Storage</span><strong>Local</strong></div>
+        <div class="desktop-stat-row"><span>Status</span><strong>Stable</strong></div>
+      </section>
     </div>
   </div>
 
@@ -896,6 +970,28 @@
           <span class="app-switch-track" aria-hidden="true"></span>
           <span class="app-switch-text">Dark Mode</span>
         </label>
+      </div>
+      <div class="app-window-section">
+        <div class="app-window-label">Desktop Options</div>
+        <label class="app-switch">
+          <input type="checkbox" id="desktopCompactToggle">
+          <span class="app-switch-track" aria-hidden="true"></span>
+          <span class="app-switch-text">Compact desktop icons</span>
+        </label>
+        <label class="app-switch">
+          <input type="checkbox" id="desktopMotionToggle" checked>
+          <span class="app-switch-track" aria-hidden="true"></span>
+          <span class="app-switch-text">Desktop animations</span>
+        </label>
+      </div>
+      <div class="app-window-section">
+        <div class="app-window-label">Quick Actions</div>
+        <div class="settings-action-grid">
+          <button class="btn-small" id="settingsOpenFiles" type="button">Open Files</button>
+          <button class="btn-small" id="settingsOpenNotes" type="button">Open Notes</button>
+          <button class="btn-small" id="settingsOpenTerminal" type="button">Open Terminal</button>
+          <button class="btn-small danger" id="settingsExitDesktop" type="button">Exit Desktop</button>
+        </div>
       </div>
     </div>
     <div class="app-window-resize-handle" id="appsSettingsResize" aria-hidden="true"></div>
@@ -944,8 +1040,6 @@
       <div id="terminalLauncherMobileOutput" class="terminal-output" aria-live="polite"></div>
     </div>
   </div>
-
-  <button id="mobileTerminalFab" class="mobile-terminal-fab" type="button" aria-label="Open terminal">Terminal</button>
 
   <script>
     (function() {
